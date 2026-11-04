@@ -1,0 +1,729 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Logical data model &middot; ZeroGate</title>
+<meta name="description" content="Entities, keys, and cardinalities behind the access decision.">
+<meta name="color-scheme" content="light">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --paper: #f4f1e9;
+  --paper-2: #ebe6da;
+  --white: #ffffff;
+  --ink: #1f2a30;
+  --muted: #52646c;
+  --soft: #5c6f77;
+  --rule: rgba(31,42,48,0.12);
+  --rule-solid: #c9c2b4;
+  --accent: #b54427;
+  --accent-tint: rgba(181,68,39,0.08);
+  --link: #2c5d8a;
+  --sans: 'Geist', system-ui, sans-serif;
+  --serif: 'Instrument Serif', 'Noto Serif', serif;
+  --mono: 'Geist Mono', ui-monospace, monospace;
+}
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--sans);
+  background: var(--paper);
+  color: var(--ink);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+::selection { background: rgba(181,68,39,0.18); }
+
+/* ---------- header ---------- */
+.site-header {
+  border-bottom: 1px solid var(--rule);
+  padding: 18px 0;
+}
+.header-inner {
+  width: min(1300px, calc(100% - 64px));
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+.brand {
+  display: flex; align-items: center; gap: 12px;
+  text-decoration: none; color: var(--ink);
+}
+.brand-mark {
+  width: 30px; height: 30px;
+  display: grid; place-items: center;
+  background: var(--accent); color: var(--paper);
+  font-family: var(--serif); font-size: 15px; line-height: 1;
+  border-radius: 3px;
+}
+.brand-text { display: flex; flex-direction: column; gap: 1px; }
+.brand-name { font-family: var(--serif); font-size: 19px; letter-spacing: -0.01em; }
+.brand-sub {
+  font-family: var(--mono); font-size: 8px; letter-spacing: 0.18em;
+  text-transform: uppercase; color: var(--muted);
+}
+.site-nav { display: flex; align-items: center; gap: 22px; flex-wrap: wrap; }
+.site-nav a {
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--muted); text-decoration: none;
+  border-bottom: 1px solid transparent; padding-bottom: 2px;
+}
+.site-nav a:hover, .site-nav a[aria-current="page"] {
+  color: var(--ink); border-bottom-color: var(--accent);
+}
+
+/* ---------- page ---------- */
+.wrap { width: min(1300px, calc(100% - 64px)); margin: 0 auto; }
+.page { padding: 64px 0 72px; }
+.chapter {
+  display: flex; align-items: center; gap: 12px; margin-bottom: 18px;
+}
+.chapter-num {
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em;
+  color: var(--accent); border: 1px solid rgba(181,68,39,0.35);
+  border-radius: 2px; padding: 3px 6px; line-height: 1;
+}
+.eyebrow {
+  font-family: var(--mono); font-size: 10px; font-weight: 500;
+  letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted);
+}
+h1 {
+  font-family: var(--serif); font-weight: 400; font-size: clamp(2.3rem, 4vw + 1rem, 3.6rem);
+  line-height: 1.02; letter-spacing: -0.025em; max-width: 980px;
+}
+.lede {
+  font-size: 19px; line-height: 1.62; color: var(--muted);
+  max-width: 790px; margin-top: 20px;
+}
+.meta-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 26px; }
+.chip {
+  font-family: var(--mono); font-size: 9px; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--muted);
+  border: 1px solid var(--rule); border-radius: 2px;
+  padding: 5px 8px; background: rgba(255,255,255,0.45);
+}
+.chip strong { color: var(--ink); font-weight: 500; }
+
+/* ---------- diagram ---------- */
+.diagram-block { margin: 44px 0 0; }
+.diagram-top {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 20px; border-top: 1px solid var(--rule); padding-top: 16px;
+}
+.diagram-label {
+  font-family: var(--mono); font-size: 9px; letter-spacing: 0.16em;
+  text-transform: uppercase; color: var(--soft);
+}
+.diagram-hint {
+  display: none; white-space: nowrap;
+  font-family: var(--mono); font-size: 9px; letter-spacing: 0.04em;
+  color: var(--soft); text-align: right;
+}
+.diagram-container {
+  width: 100%; overflow-x: auto; margin-top: 8px;
+  scrollbar-width: thin; scrollbar-color: var(--rule-solid) transparent;
+}
+.diagram-container svg { width: 100%; display: block; }
+.caption {
+  font-size: 12.5px; line-height: 1.6; color: var(--muted);
+  max-width: 900px; margin-top: 12px;
+}
+.caption b { color: var(--ink); font-weight: 600; }
+
+/* ---------- cards ---------- */
+.cards {
+  display: grid; grid-template-columns: 1.15fr 0.95fr 0.9fr;
+  gap: 16px; margin: 40px 0 0;
+}
+.cards.two { grid-template-columns: 1.25fr 0.75fr; }
+.cards.four { grid-template-columns: 1.1fr 1fr 0.9fr 0.9fr; }
+.card {
+  background: var(--white); border: 1px solid var(--rule);
+  border-radius: 6px; padding: 20px; min-width: 0;
+}
+.card-label {
+  font-family: var(--mono); font-size: 8px; letter-spacing: 0.16em;
+  text-transform: uppercase; color: var(--soft); margin-bottom: 10px;
+}
+.card h3 {
+  font-size: 15px; font-weight: 600; letter-spacing: -0.01em;
+  line-height: 1.3; margin-bottom: 10px;
+}
+.card p, .card li { font-size: 12.5px; line-height: 1.62; color: var(--muted); }
+.card ul, .card ol { padding-left: 16px; display: grid; gap: 6px; }
+.card li::marker { color: var(--accent); }
+.card .rule-list { list-style: none; padding-left: 0; }
+.card .rule-list li {
+  border-top: 1px solid var(--rule); padding-top: 8px;
+}
+.card .rule-list li:first-child { border-top: 0; padding-top: 0; }
+.card .mono { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.02em; color: var(--ink); }
+.card-dot {
+  display: inline-block; width: 7px; height: 7px; border-radius: 50%;
+  margin-right: 7px; vertical-align: 1px;
+}
+.dot-accent { background: var(--accent); }
+.dot-ink { background: var(--ink); }
+.dot-muted { background: var(--muted); }
+.dot-link { background: var(--link); }
+.dot-soft { background: var(--soft); }
+
+/* ---------- prose ---------- */
+.prose { max-width: 900px; margin-top: 52px; }
+.prose.wide { max-width: 100%; }
+.prose.wide > p { max-width: 760px; }
+.prose.wide > .callout { max-width: 900px; }
+.prose h2 {
+  font-family: var(--serif); font-weight: 400; font-size: 32px;
+  line-height: 1.12; letter-spacing: -0.02em; margin: 54px 0 16px;
+}
+.prose h2:first-child { margin-top: 0; }
+.prose h3 {
+  font-size: 16px; font-weight: 600; letter-spacing: -0.01em;
+  margin: 32px 0 10px;
+}
+.prose h4 {
+  font-family: var(--mono); font-size: 10px; font-weight: 500;
+  letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);
+  margin: 26px 0 8px;
+}
+.prose p { font-size: 15px; line-height: 1.72; color: var(--muted); margin: 12px 0; }
+.prose p strong, .prose li strong { color: var(--ink); font-weight: 600; }
+.prose ul, .prose ol { margin: 12px 0 12px 22px; display: grid; gap: 7px; }
+.prose li { font-size: 14.5px; line-height: 1.65; color: var(--muted); }
+.prose li::marker { color: var(--accent); }
+.prose a { color: var(--link); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+.prose code {
+  font-family: var(--mono); font-size: 12px; background: var(--paper-2);
+  border: 1px solid rgba(31,42,48,0.06); border-radius: 2px;
+  padding: 1px 4px; color: var(--ink);
+}
+.prose pre {
+  background: var(--ink); color: #ece7db; border-radius: 6px;
+  padding: 20px 22px; overflow-x: auto; margin: 18px 0;
+  font-family: var(--mono); font-size: 12px; line-height: 1.65;
+}
+.prose pre code { background: none; border: 0; padding: 0; color: inherit; }
+.prose blockquote {
+  border-left: 2px solid var(--accent); padding: 2px 0 2px 20px;
+  margin: 22px 0; font-family: var(--serif); font-size: 21px;
+  line-height: 1.5; color: var(--ink);
+}
+.prose blockquote p { font-size: inherit; color: inherit; }
+.prose hr { border: 0; border-top: 1px solid var(--rule); margin: 36px 0; }
+
+/* ---------- tables ---------- */
+.table-wrap { width: 100%; overflow-x: auto; margin: 18px 0 24px; }
+table {
+  width: 100%; border-collapse: collapse; font-size: 12.5px;
+  line-height: 1.5; background: rgba(255,255,255,0.38);
+}
+th {
+  font-family: var(--mono); font-size: 8.5px; font-weight: 500;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--soft);
+  text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--ink);
+  vertical-align: bottom; white-space: nowrap;
+}
+td {
+  padding: 10px 12px; border-bottom: 1px solid var(--rule);
+  color: var(--muted); vertical-align: top;
+}
+td:first-child { color: var(--ink); }
+tbody tr:hover td { background: rgba(255,255,255,0.55); }
+td code, th code { font-family: var(--mono); font-size: 11px; }
+table.compact td, table.compact th { padding: 7px 10px; }
+
+/* ---------- method tags ---------- */
+.method {
+  display: inline-block; font-family: var(--mono); font-size: 9px;
+  font-weight: 500; letter-spacing: 0.06em; line-height: 1;
+  padding: 4px 5px 3px; border-radius: 2px; min-width: 42px;
+  text-align: center; color: var(--ink); border: 1px solid var(--rule-solid);
+  background: var(--paper);
+}
+.method.get { color: #2c5d8a; border-color: rgba(44,93,138,0.4); background: rgba(44,93,138,0.06); }
+.method.post { color: #6d5a1f; border-color: rgba(109,90,31,0.4); background: rgba(109,90,31,0.06); }
+.method.put, .method.patch { color: #61522b; border-color: rgba(97,82,43,0.4); background: rgba(97,82,43,0.06); }
+.method.delete { color: var(--accent); border-color: rgba(181,68,39,0.4); background: rgba(181,68,39,0.06); }
+
+/* ---------- page nav / footer ---------- */
+.page-nav {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+  margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--rule);
+}
+.page-nav a {
+  display: block; text-decoration: none; color: var(--ink);
+  border: 1px solid var(--rule); border-radius: 6px; padding: 16px 18px;
+  background: rgba(255,255,255,0.35);
+}
+.page-nav a:hover { border-color: var(--rule-solid); background: var(--white); }
+.page-nav .dir {
+  font-family: var(--mono); font-size: 8px; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--soft); display: block; margin-bottom: 5px;
+}
+.page-nav .name { font-family: var(--serif); font-size: 20px; }
+.page-nav .next { text-align: right; }
+.site-footer {
+  border-top: 1px solid var(--rule); padding: 24px 0 40px;
+}
+.footer-inner {
+  width: min(1300px, calc(100% - 64px)); margin: 0 auto;
+  display: flex; justify-content: space-between; gap: 24px; flex-wrap: wrap;
+  font-family: var(--mono); font-size: 9.5px; line-height: 1.7;
+  letter-spacing: 0.04em; color: var(--soft);
+}
+.footer-inner a { color: var(--muted); text-decoration: none; border-bottom: 1px solid var(--rule); }
+
+/* ---------- index ---------- */
+.index-hero { padding: 80px 0 44px; }
+.index-hero h1 { font-size: clamp(3rem, 7vw + 0.5rem, 6.2rem); max-width: 1000px; }
+.index-hero .lede { max-width: 680px; font-size: 20px; }
+.index-rule {
+  display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px;
+  border-top: 1px solid var(--ink); border-bottom: 1px solid var(--rule);
+  padding: 20px 0; margin-top: 40px;
+}
+.index-rule div { display: flex; flex-direction: column; gap: 4px; }
+.index-rule .k {
+  font-family: var(--mono); font-size: 8px; letter-spacing: 0.16em;
+  text-transform: uppercase; color: var(--soft);
+}
+.index-rule .v { font-size: 13px; color: var(--ink); }
+.section-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 20px; margin: 64px 0 20px; border-bottom: 1px solid var(--ink);
+  padding-bottom: 10px;
+}
+.section-head h2 {
+  font-family: var(--serif); font-weight: 400; font-size: 34px;
+  letter-spacing: -0.02em;
+}
+.section-head .count {
+  font-family: var(--mono); font-size: 9px; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--soft);
+}
+.toc-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;
+}
+.toc-grid.four { grid-template-columns: repeat(4, 1fr); }
+.toc-grid .wide { grid-column: span 2; }
+.toc-card {
+  display: block; text-decoration: none; color: var(--ink);
+  background: rgba(255,255,255,0.45); border: 1px solid var(--rule);
+  border-radius: 6px; padding: 20px; min-height: 148px;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+.toc-card:hover { background: var(--white); border-color: var(--rule-solid); }
+.toc-card .num {
+  font-family: var(--mono); font-size: 9px; letter-spacing: 0.1em;
+  color: var(--accent); margin-bottom: 18px; display: block;
+}
+.toc-card h3 {
+  font-family: var(--serif); font-weight: 400; font-size: 24px;
+  line-height: 1.1; letter-spacing: -0.015em; margin-bottom: 8px;
+}
+.toc-card p { font-size: 12.5px; line-height: 1.55; color: var(--muted); }
+.toc-card .type {
+  display: block; margin-top: 14px; font-family: var(--mono);
+  font-size: 8px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--soft);
+}
+.toc-card.accent { border-color: rgba(181,68,39,0.4); background: var(--accent-tint); }
+.toc-card.accent:hover { background: rgba(181,68,39,0.12); }
+.manifest {
+  margin-top: 64px; border-top: 1px solid var(--ink); padding-top: 20px;
+  display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 32px;
+}
+.manifest p { font-size: 13px; line-height: 1.65; color: var(--muted); }
+.manifest h3 {
+  font-family: var(--mono); font-size: 9px; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--soft); margin-bottom: 10px;
+}
+.manifest ul { list-style: none; display: grid; gap: 6px; }
+.manifest li { font-size: 12.5px; color: var(--muted); }
+.manifest li span { color: var(--ink); font-family: var(--mono); font-size: 10px; }
+
+/* ---------- risk specific ---------- */
+.risk-band {
+  display: grid; grid-template-columns: 1.4fr 1fr 1fr 1.4fr;
+  border: 1px solid var(--rule); border-radius: 6px; overflow: hidden;
+  margin: 24px 0;
+}
+.risk-band div { padding: 14px 16px; border-left: 1px solid var(--rule); }
+.risk-band div:first-child { border-left: 0; }
+.risk-band .band-name {
+  font-family: var(--mono); font-size: 9px; letter-spacing: 0.12em;
+  text-transform: uppercase; margin-bottom: 4px;
+}
+.risk-band .band-range { font-family: var(--serif); font-size: 26px; line-height: 1; }
+.risk-band .band-action { font-size: 11px; color: var(--muted); margin-top: 6px; }
+.band-allow { background: rgba(111,130,100,0.10); }
+.band-step { background: rgba(166,124,61,0.10); }
+.band-approve { background: rgba(44,93,138,0.08); }
+.band-deny { background: rgba(181,68,39,0.10); }
+
+/* ---------- additions for the dossier ---------- */
+.skip {
+  position: absolute; left: -9999px; top: 0; z-index: 20;
+  background: var(--ink); color: var(--paper); padding: 10px 14px;
+  font-family: var(--mono); font-size: 11px; text-decoration: none;
+}
+.skip:focus { left: 16px; top: 16px; }
+.figure-stack .diagram-block { margin-top: 40px; }
+.figure-stack .diagram-block:first-child { margin-top: 44px; }
+.callout {
+  border: 1px solid var(--rule); border-left: 2px solid var(--accent);
+  background: rgba(255,255,255,0.46); border-radius: 4px;
+  padding: 16px 20px; margin: 22px 0;
+}
+.callout .k {
+  font-family: var(--mono); font-size: 8px; letter-spacing: 0.16em;
+  text-transform: uppercase; color: var(--soft); display: block; margin-bottom: 7px;
+}
+.callout p { margin: 0; font-size: 13px; line-height: 1.65; color: var(--muted); }
+.callout p + p { margin-top: 8px; }
+.badge {
+  display: inline-block; font-family: var(--mono); font-size: 8px;
+  letter-spacing: 0.06em; text-transform: uppercase; line-height: 1;
+  padding: 4px 6px 3px; border: 1px solid var(--rule-solid);
+  border-radius: 2px; white-space: nowrap; color: var(--ink);
+  background: var(--paper);
+}
+.badge.core { color: #3f5a3a; border-color: rgba(63,90,58,0.35); background: rgba(63,90,58,0.07); }
+.badge.add-on { color: #6d5a1f; border-color: rgba(109,90,31,0.35); background: rgba(109,90,31,0.07); }
+.badge.stretch { color: var(--link); border-color: rgba(44,93,138,0.35); background: rgba(44,93,138,0.07); }
+.stat-strip {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  border-top: 1px solid var(--ink); border-bottom: 1px solid var(--rule);
+  margin: 36px 0 0;
+}
+.stat-strip .stat { padding: 16px 18px 14px; border-left: 1px solid var(--rule); }
+.stat-strip .stat:first-child { border-left: 0; padding-left: 0; }
+.stat-strip .n {
+  display: block; font-family: var(--serif); font-size: 34px;
+  line-height: 1; letter-spacing: -0.02em;
+}
+.stat-strip .l {
+  display: block; margin-top: 5px; font-family: var(--mono);
+  font-size: 8px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--soft);
+}
+.api-table td:first-child { width: 66px; white-space: nowrap; }
+.api-table td:nth-child(2) { white-space: nowrap; }
+.api-table .path {
+  font-family: var(--mono); font-size: 11.5px; color: var(--ink);
+  letter-spacing: -0.01em;
+}
+.api-table td:last-child { font-size: 11.5px; }
+caption {
+  caption-side: top; text-align: left; padding-bottom: 8px;
+  font-family: var(--mono); font-size: 8px; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--soft);
+}
+.mini-note {
+  font-family: var(--mono); font-size: 9px; line-height: 1.6;
+  letter-spacing: 0.03em; color: var(--soft); margin-top: 10px;
+}
+.link-row { display: flex; gap: 18px; flex-wrap: wrap; margin-top: 18px; }
+.link-row a {
+  font-family: var(--mono); font-size: 9px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--link); text-decoration: none;
+  border-bottom: 1px solid rgba(44,93,138,0.35); padding-bottom: 3px;
+}
+.link-row a:hover { border-bottom-color: var(--link); }
+.pdf-row { margin-top: 16px; }
+.pdf-download {
+  display: inline-flex; align-items: center; gap: 9px;
+  font-family: var(--mono); font-size: 9px; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--ink); text-decoration: none;
+  border: 1px solid var(--rule-solid); padding: 8px 11px;
+  background: rgba(255,255,255,0.5); border-radius: 2px;
+}
+.pdf-download:hover { border-color: var(--ink); background: var(--white); }
+.pdf-download .pdf-tag { color: var(--accent); font-weight: 600; letter-spacing: 0.12em; }
+.pdf-download .arrow { color: var(--accent); }
+
+/* ---------- report layout ---------- */
+.report-layout {
+  display: grid; grid-template-columns: minmax(0, 1fr) 216px;
+  gap: 56px; align-items: start; margin-top: 44px;
+}
+.report-body.prose { max-width: none; margin-top: 0; }
+.report-aside {
+  position: sticky; top: 22px; border-top: 1px solid var(--ink);
+  padding-top: 12px;
+}
+.report-aside .card-label { margin-bottom: 12px; }
+.report-aside nav { display: grid; gap: 7px; }
+.report-aside a {
+  font-family: var(--mono); font-size: 9px; line-height: 1.5;
+  letter-spacing: 0.02em; color: var(--muted); text-decoration: none;
+  display: block; border-left: 1px solid transparent; padding-left: 9px;
+}
+.report-aside a:hover { color: var(--ink); border-left-color: var(--accent); }
+.report-aside .aside-rule {
+  border-top: 1px solid var(--rule); margin: 14px 0 12px;
+}
+.report-aside .aside-meta {
+  font-family: var(--mono); font-size: 8px; letter-spacing: 0.08em;
+  line-height: 1.7; color: var(--soft); text-transform: uppercase;
+}
+.report-body h2, .report-body h3 { scroll-margin-top: 18px; }
+.report-body h2:first-child { margin-top: 0; }
+.report-body table { font-size: 11.8px; }
+.report-body td, .report-body th { padding: 8px 10px; }
+.report-body .table-wrap { margin: 14px 0 20px; }
+.report-body pre { font-size: 11.5px; }
+
+/* ---------- API reference ---------- */
+.api-mobile-note { display: none; }
+.api-group { margin-top: 46px; }
+.api-group-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 20px; border-top: 1px solid var(--ink); padding-top: 10px;
+  margin-bottom: 4px;
+}
+.api-group-head h2 {
+  font-family: var(--serif); font-weight: 400; font-size: 29px;
+  letter-spacing: -0.02em; margin: 0;
+}
+.api-group-head .count {
+  font-family: var(--mono); font-size: 8px; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--soft); white-space: nowrap;
+}
+.api-group-desc {
+  font-size: 13px; line-height: 1.6; color: var(--muted);
+  max-width: 760px; margin: 0 0 12px;
+}
+.api-table td { vertical-align: top; }
+.api-table tr[id] { scroll-margin-top: 24px; }
+.api-table .op-id {
+  display: block; font-family: var(--mono); font-size: 8px;
+  letter-spacing: 0.03em; color: var(--soft); margin-top: 3px;
+}
+.api-table .auth {
+  font-family: var(--mono); font-size: 8px; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--muted); white-space: nowrap;
+}
+.api-table .success {
+  font-family: var(--mono); font-size: 9px; color: var(--muted);
+  white-space: nowrap;
+}
+.api-deep {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+  margin-top: 26px;
+}
+.api-deep .card { background: rgba(255,255,255,0.5); }
+.api-deep .card h3 { font-family: var(--serif); font-size: 24px; font-weight: 400; }
+.api-deep .card .mono { margin-bottom: 10px; }
+.api-deep .card pre { margin: 10px 0 0; font-size: 10.5px; padding: 14px 16px; }
+.api-deep .card .method { margin-right: 6px; }
+.schema-grid { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.schema-chip {
+  font-family: var(--mono); font-size: 8.5px; letter-spacing: 0.02em;
+  color: var(--muted); border: 1px solid var(--rule); border-radius: 2px;
+  padding: 4px 6px; background: rgba(255,255,255,0.45);
+}
+.op-index { display: grid; gap: 8px; }
+.op-index a {
+  display: flex; gap: 10px; align-items: baseline; text-decoration: none;
+  color: var(--muted); font-size: 12.5px;
+}
+.op-index a:hover { color: var(--ink); }
+.op-index .method { flex: 0 0 44px; }
+.op-index .path { font-family: var(--mono); font-size: 10.5px; color: var(--ink); }
+
+/* ---------- extra editorial bits ---------- */
+.hero-em { color: var(--accent); font-style: italic; }
+.section-note {
+  font-family: var(--mono); font-size: 9px; letter-spacing: 0.04em;
+  color: var(--soft); margin-top: 10px;
+}
+.band-strip {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  border: 1px solid var(--rule); border-radius: 6px; overflow: hidden;
+  margin: 24px 0 28px;
+}
+.band-strip div { padding: 16px 18px; border-left: 1px solid var(--rule); }
+.band-strip div:first-child { border-left: 0; }
+.band-strip .k {
+  font-family: var(--mono); font-size: 8px; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--soft); display: block; margin-bottom: 5px;
+}
+.band-strip .v { font-family: var(--serif); font-size: 22px; line-height: 1; display: block; }
+.band-strip .d { font-size: 10.5px; line-height: 1.45; color: var(--muted); margin-top: 6px; display: block; }
+.rule-table td:first-child { font-family: var(--mono); font-size: 10px; white-space: nowrap; }
+.step-table td:first-child {
+  font-family: var(--mono); font-size: 9px; color: var(--accent);
+  width: 42px; white-space: nowrap;
+}
+.step-table td:nth-child(2) { color: var(--ink); white-space: nowrap; }
+.step-table td:nth-child(3) { font-family: var(--mono); font-size: 10px; white-space: nowrap; }
+.kv { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 18px; }
+.kv .card { padding: 16px 18px; }
+.kv .card h3 { font-size: 13px; }
+.path-row {
+  display: grid; grid-template-columns: 54px 1.1fr 1.6fr; gap: 16px;
+  align-items: start; border-top: 1px solid var(--rule); padding: 14px 0;
+}
+.path-row:last-child { border-bottom: 1px solid var(--rule); }
+.path-row .n {
+  font-family: var(--mono); font-size: 9px; letter-spacing: 0.1em;
+  color: var(--accent); padding-top: 2px;
+}
+.path-row h3 { font-size: 14px; font-weight: 600; margin-bottom: 3px; }
+.path-row p { font-size: 12px; line-height: 1.6; color: var(--muted); }
+.path-row a { color: var(--link); text-decoration: none; border-bottom: 1px solid rgba(44,93,138,0.3); }
+
+/* ---------- responsive ---------- */
+@media (max-width: 980px) {
+  .report-layout { grid-template-columns: minmax(0, 1fr); gap: 24px; }
+  .report-aside { display: none; }
+  .diagram-hint { display: inline; }
+  .api-deep { grid-template-columns: 1fr; }
+  .band-strip { grid-template-columns: 1fr 1fr; }
+  .band-strip div:nth-child(3) { border-left: 0; }
+  .band-strip div:nth-child(n+3) { border-top: 1px solid var(--rule); }
+  .cards, .cards.four { grid-template-columns: 1fr 1fr; }
+  .cards .card:last-child { grid-column: span 2; }
+  .toc-grid, .toc-grid.four { grid-template-columns: 1fr 1fr; }
+  .toc-grid .wide { grid-column: span 2; }
+  .manifest { grid-template-columns: 1fr 1fr; }
+  .index-rule { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 700px) {
+  .header-inner, .wrap, .footer-inner { width: calc(100% - 40px); }
+  .api-table th:nth-child(4), .api-table td:nth-child(4),
+  .api-table th:nth-child(5), .api-table td:nth-child(5) { display: none; }
+  .api-table td:nth-child(2) { white-space: normal; }
+  .api-table .path { overflow-wrap: anywhere; }
+  .api-mobile-note { display: block; }
+  .report-body td:first-child { white-space: nowrap; }
+  .site-header { padding: 14px 0; }
+  .site-nav { gap: 12px; }
+  .site-nav a { font-size: 9px; }
+  .page { padding: 44px 0 56px; }
+  h1 { font-size: clamp(2rem, 10vw, 3rem); }
+  .lede { font-size: 17px; }
+  .cards, .cards.two, .cards.four, .toc-grid, .toc-grid.four, .manifest, .index-rule { grid-template-columns: 1fr; }
+  .cards .card:last-child, .toc-grid .wide { grid-column: auto; }
+  .page-nav { grid-template-columns: 1fr; }
+  .stat-strip { grid-template-columns: 1fr 1fr; }
+  .stat-strip .stat:nth-child(3) { border-left: 0; padding-left: 0; }
+  .stat-strip .stat:nth-child(n+3) { border-top: 1px solid var(--rule); }
+  .risk-band { grid-template-columns: 1fr 1fr; }
+  .risk-band div:nth-child(3) { border-left: 0; }
+  .risk-band div:nth-child(n+3) { border-top: 1px solid var(--rule); }
+  .prose h2 { font-size: 28px; }
+  .path-row { grid-template-columns: 38px 1fr; }
+  .path-row p { grid-column: 2; }
+}
+@media print {
+  .site-header, .site-footer, .page-nav, .diagram-hint, .report-aside { display: none; }
+  body { background: #fff; }
+  .page { padding: 0; }
+  .wrap { width: 100%; }
+  .report-layout { display: block; margin-top: 24px; }
+  .diagram-container { overflow-x: visible; }
+  .diagram-container svg { min-width: 0 !important; }
+  .card, .callout, .risk-band, .band-strip { break-inside: avoid; }
+  table { break-inside: auto; }
+  tr { break-inside: avoid; }
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="site-header">
+  <div class="header-inner">
+    <a class="brand" href="index.html" aria-label="ZeroGate design dossier, home">
+      <span class="brand-mark" aria-hidden="true">ZG</span>
+      <span class="brand-text">
+        <span class="brand-name">ZeroGate</span>
+        <span class="brand-sub">Zero-trust access broker &middot; dossier</span>
+      </span>
+    </a>
+    <nav class="site-nav" aria-label="Dossier sections">
+      <a href="index.html">Atlas</a><a href="architecture.html" aria-current="page">System</a><a href="domain-model.html">Domain</a><a href="data-model.html">Data</a><a href="flow-passkey.html">Flows</a><a href="policy-engine.html">Policy</a><a href="state-session.html">States</a><a href="risk-scoring.html">Risk</a><a href="requirements.html">Requirements</a><a href="api.html">API</a>
+    </nav>
+  </div>
+</header>
+<main id="main">
+
+<div class="wrap">
+  <div class="page">
+    <header class="page-head"><div class="chapter"><span class="chapter-num">03</span><span class="eyebrow">SYSTEM / DATA</span></div><h1>Entities, keys,<br>and cardinality.</h1><p class="lede">The logical model is the bridge between the domain classes and the physical tables. It fixes the nouns, the identifiers, and the relationships, but leaves storage types, indexes, and delete rules to the schema page.</p><div class="meta-row"><span class="chip">FIG. <strong>03</strong></span><span class="chip">8 <strong>entities</strong></span><span class="chip">7 <strong>relationships</strong></span><span class="chip">1 <strong>aggregate root</strong></span></div></header>
+    <figure class="diagram-block" id="figure-03"><div class="diagram-top"><figcaption class="diagram-label">Fig. 03 &mdash; Logical data model</figcaption><span class="diagram-hint">Scroll to inspect &rarr;</span></div><div class="diagram-container"><svg viewBox="0 0 960 720" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="fig03-er-title fig03-er-desc" style="min-width:960px"><title id="fig03-er-title">ZeroGate logical data model</title><desc id="fig03-er-desc">Entity relationship model linking users, devices, passkey credentials, resources, policies, access requests, sessions, and audit events.</desc><defs>
+<marker id="fig03-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#52646c"/></marker>
+<marker id="fig03-arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#b54427"/></marker>
+<marker id="fig03-arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2c5d8a"/></marker>
+<marker id="fig03-arrow-open" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polyline points="0 0, 8 3, 0 6" fill="none" stroke="#52646c" stroke-width="1.2"/></marker>
+<marker id="fig03-arrow-open-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polyline points="0 0, 8 3, 0 6" fill="none" stroke="#2c5d8a" stroke-width="1.2"/></marker>
+<marker id="fig03-uml-open" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L9,4 L0,8" fill="none" stroke="#52646c" stroke-width="1"/></marker>
+<marker id="fig03-uml-triangle" markerWidth="16" markerHeight="12" refX="15" refY="6" orient="auto" markerUnits="userSpaceOnUse"><polygon points="0 0, 16 6, 0 12" fill="#f4f1e9" stroke="#1f2a30" stroke-width="1"/></marker>
+<marker id="fig03-uml-diamond-filled" markerWidth="18" markerHeight="10" refX="0" refY="5" orient="auto" markerUnits="userSpaceOnUse"><polygon points="0 5, 9 0, 18 5, 9 10" fill="#1f2a30"/></marker>
+<marker id="fig03-uml-diamond-hollow" markerWidth="18" markerHeight="10" refX="0" refY="5" orient="auto" markerUnits="userSpaceOnUse"><polygon points="0 5, 9 0, 18 5, 9 10" fill="#f4f1e9" stroke="#1f2a30" stroke-width="1"/></marker>
+<marker id="fig03-uml-diamond-hollow-end" markerWidth="18" markerHeight="10" refX="18" refY="5" orient="auto" markerUnits="userSpaceOnUse"><polygon points="0 5, 9 0, 18 5, 9 10" fill="#f4f1e9" stroke="#1f2a30" stroke-width="1"/></marker>
+
+</defs><rect width="100%" height="100%" fill="#f4f1e9"/><path d="M 240,160 L 280,160" fill="none" stroke="#52646c" stroke-width="1.2" marker-end="url(#fig03-arrow)"/><rect x="249.83" y="138" width="8.34" height="12" fill="#f4f1e9" stroke="none" stroke-width="1" rx="2"/><text x="254" y="148" font-size="7" fill="#1f2a30" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.06">1</text><rect x="267.83" y="138" width="8.34" height="12" fill="#f4f1e9" stroke="none" stroke-width="1" rx="2"/><text x="272" y="148" font-size="7" fill="#1f2a30" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.06">N</text><path d="M 480,160 L 520,160" fill="none" stroke="#52646c" stroke-width="1.2" marker-end="url(#fig03-arrow)"/><rect x="489.83" y="138" width="8.34" height="12" fill="#f4f1e9" stroke="none" stroke-width="1" rx="2"/><text x="494" y="148" font-size="7" fill="#1f2a30" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.06">1</text><rect x="507.83" y="138" width="8.34" height="12" fill="#f4f1e9" stroke="none" stroke-width="1" rx="2"/><text x="512" y="148" font-size="7" fill="#1f2a30" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.06">N</text><path d="M 140,206 L 140,292 Q 140,300 148,300 L 252,300 Q 260,300 260,308 L 260,422 Q 260,430 268,430 L 280,430" fill="none" stroke="#52646c" stroke-width="1.2" marker-end="url(#fig03-arrow)"/><rect x="114.16" y="282" width="51.68" height="12" fill="#f4f1e9" stroke="none" stroke-width="1" rx="2"/><text x="140" y="292" font-size="8" fill="#5c6f77" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.06">REQUESTS</text><rect x="145.83" y="216" width="8.34" height="12" fill="#f4f1e9" stroke="none" stroke-width="1" rx="2"/><text x="150" y="226" font-size="7" fill="#1f2a30" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.06">1</text><rect x="265.83" y="408" width="8.34" height="12" fill="#f4f1e9" stroke="none" stroke-width="1" rx="2"/><text x="270" y="418" font-size="7" fill="#1f2a30" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.06">N</text><path d="M 860,224 L 860,312 Q 860,320 852,320 L 688,320 Q 680,320 680,328 L 680,422 Q 680,430 672,430 L 480,430" fill="none" stroke="#52646c" stroke-width="1.2" marker-end="url(#fig03-arrow)"/><rect x="746.64" y="302" width="46.72" height="12" fill="#f4f1e9" stroke="none" stroke-width="1" rx="2"/><text x="770" y="312" font-size="8" fill="#5c6f77" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.06">TARGETS</text><rect x="867.83" y="234" width="8.34" height="12" fill="#f4f1e9" stroke="none" stroke-width="1" rx="2"/><text x="872" y="244" font-size="7" fill="#1f2a30" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.06">1</text><rect x="487.83" y="408" width="8.34" height="12" fill="#f4f1e9" stroke="none" stroke-width="1" rx="2"/><text x="492" y="418" font-size="7" fill="#1f2a30" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.06">N</text><path d="M 480,470 L 520,470" fill="none" stroke="#52646c" stroke-width="1.2" marker-end="url(#fig03-arrow)"/><rect x="483.32" y="448" width="21.36" height="12" fill="#f4f1e9" stroke="none" stroke-width="1" rx="2"/><text x="494" y="458" font-size="7" fill="#1f2a30" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.06">0..1</text><rect x="507.83" y="448" width="8.34" height="12" fill="#f4f1e9" stroke="none" stroke-width="1" rx="2"/><text x="512" y="458" font-size="7" fill="#1f2a30" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.06">1</text><path d="M 140,496 L 140,572 Q 140,580 148,580 L 612,580 Q 620,580 620,572 L 620,514" fill="none" stroke="#52646c" stroke-width="1.2" marker-end="url(#fig03-arrow)"/><rect x="356.64" y="562" width="46.72" height="12" fill="#f4f1e9" stroke="none" stroke-width="1" rx="2"/><text x="380" y="572" font-size="8" fill="#5c6f77" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.06">GOVERNS</text><rect x="145.83" y="506" width="8.34" height="12" fill="#f4f1e9" stroke="none" stroke-width="1" rx="2"/><text x="150" y="516" font-size="7" fill="#1f2a30" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.06">1</text><rect x="627.83" y="524" width="8.34" height="12" fill="#f4f1e9" stroke="none" stroke-width="1" rx="2"/><text x="632" y="534" font-size="7" fill="#1f2a30" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.06">N</text><path d="M 720,430 L 780,430" fill="none" stroke="#52646c" stroke-width="1.2" marker-end="url(#fig03-arrow)"/><rect x="726.64" y="408" width="46.72" height="12" fill="#f4f1e9" stroke="none" stroke-width="1" rx="2"/><text x="750" y="418" font-size="8" fill="#5c6f77" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.06">RECORDS</text><rect x="725.83" y="438" width="8.34" height="12" fill="#f4f1e9" stroke="none" stroke-width="1" rx="2"/><text x="730" y="448" font-size="7" fill="#1f2a30" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.06">1</text><rect x="765.83" y="438" width="8.34" height="12" fill="#f4f1e9" stroke="none" stroke-width="1" rx="2"/><text x="770" y="448" font-size="7" fill="#1f2a30" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.06">N</text><rect x="40" y="88" width="200" height="118" fill="rgba(181,68,39,0.04)" stroke="#b54427" stroke-width="1" rx="6"/><rect x="40" y="88" width="200" height="36" fill="rgba(181,68,39,0.08)" stroke="none" stroke-width="1" rx="6"/><rect x="40" y="116" width="200" height="8" fill="rgba(181,68,39,0.08)" stroke="none" stroke-width="1" rx="0"/><rect x="48" y="95" width="38" height="12" fill="none" stroke="rgba(181,68,39,0.45)" stroke-width="0.8" rx="2"/><text x="67" y="104" font-size="6.5" fill="#b54427" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.07">ENTITY</text><text x="140" y="113" font-size="12" fill="#1f2a30" font-family="'Geist', system-ui, sans-serif" text-anchor="middle" font-weight="600">USER</text><line x1="40" y1="124" x2="240" y2="124" stroke="rgba(31,42,48,0.22)" stroke-width="1"/><text x="52" y="140" font-size="9" fill="#1f2a30" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="start"># id: uuid</text><text x="52" y="158" font-size="9" fill="#1f2a30" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="start">email: text</text><text x="52" y="176" font-size="9" fill="#1f2a30" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="start">role: enum</text><text x="52" y="194" font-size="9" fill="#1f2a30" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="start">status: enum</text><rect x="280" y="88" width="200" height="154" fill="#ffffff" stroke="#1f2a30" stroke-width="1" rx="6"/><rect x="288" y="95" width="38" height="12" fill="none" stroke="rgba(31,42,48,0.30)" stroke-width="0.8" rx="2"/><text x="307" y="104" font-size="6.5" fill="#52646c" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.07">ENTITY</text><text x="380" y="113" font-size="12" fill="#1f2a30" font-family="'Geist', system-ui, sans-serif" text-anchor="middle" font-weight="600">DEVICE</text><line x1="280" y1="124" x2="480" y2="124" stroke="rgba(31,42,48,0.22)" stroke-width="1"/><text x="292" y="140" font-size="9" fill="#1f2a30" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="start"># id: uuid</text><text x="292" y="158" font-size="9" fill="#1f2a30" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="start">→ user_id: uuid</text><text x="292" y="176" font-size="9" fill="#1f2a30" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="start">hostname: text</text><text x="292" y="194" font-size="9" fill="#1f2a30" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="start">os_version: text</text><text x="292" y="212" font-size="9" fill="#1f2a30" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="start">encrypted: bool</text><text x="292" y="230" font-size="9" fill="#1f2a30" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="start">compliant: bool</text><rect x="520" y="88" width="200" height="136" fill="#ffffff" stroke="#1f2a30" stroke-width="1" rx="6"/><rect x="528" y="95" width="38" height="12" fill="none" stroke="rgba(31,42,48,0.30)" stroke-width="0.8" rx="2"/><text x="547" y="104" font-size="6.5" fill="#52646c" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.07">ENTITY</text><text x="620" y="113" font-size="12" fill="#1f2a30" font-family="'Geist', system-ui, sans-serif" text-anchor="middle" font-weight="600">PASSKEY</text><line x1="520" y1="124" x2="720" y2="124" stroke="rgba(31,42,48,0.22)" stroke-width="1"/><text x="532" y="140" font-size="9" fill="#1f2a30" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="start"># id: uuid</text><text x="532" y="158" font-size="9" fill="#1f2a30" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="start">→ device_id: uuid</text><text x="532" y="176" font-size="9" fill="#1f2a30" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="start">aaguid: text</text><text x="532" y="194" font-size="9" fill="#1f2a30" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="start">public_key: bytea</text><text x="532" y="212" font-size="9" fill="#1f2a30" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="start">sign_count: int</text><rect x="760" y="88" width="200" height="136" fill="#ffffff" stroke="#1f2a30" stroke-width="1" rx="6"/><rect x="768" y="95" width="38" height="12" fill="none" stroke="rgba(31,42,48,0.30)" stroke-width="0.8" rx="2"/><text x="787" y="104" font-size="6.5" fill="#52646c" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.07">ENTITY</text><text x="860" y="113" font-size="12" fill="#1f2a30" font-family="'Geist', system-ui, sans-serif" text-anchor="middle" font-weight="600">RESOURCE</text><line x1="760" y1="124" x2="960" y2="124" stroke="rgba(31,42,48,0.22)" stroke-width="1"/><text x="772" y="140" font-size="9" fill="#1f2a30" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="start"># id: uuid</text><text x="772" y="158" font-size="9" fill="#1f2a30" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="start">name: text</text><text x="772" y="176" font-size="9" fill="#1f2a30" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="start">kind: enum</text><text x="772" y="194" font-size="9" fill="#1f2a30" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="start">host: text</text><text x="772" y="212" font-size="9" fill="#1f2a30" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="start">sensitivity: enum</text><rect x="40" y="360" width="200" height="136" fill="#ffffff" stroke="#1f2a30" stroke-width="1" rx="6"/><rect x="48" y="367" width="38" height="12" fill="none" stroke="rgba(31,42,48,0.30)" stroke-width="0.8" rx="2"/><text x="67" y="376" font-size="6.5" fill="#52646c" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.07">ENTITY</text><text x="140" y="385" font-size="12" fill="#1f2a30" font-family="'Geist', system-ui, sans-serif" text-anchor="middle" font-weight="600">POLICY</text><line x1="40" y1="396" x2="240" y2="396" stroke="rgba(31,42,48,0.22)" stroke-width="1"/><text x="52" y="412" font-size="9" fill="#1f2a30" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="start"># id: uuid</text><text x="52" y="430" font-size="9" fill="#1f2a30" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="start">name: text</text><text x="52" y="448" font-size="9" fill="#1f2a30" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="start">effect: enum</text><text x="52" y="466" font-size="9" fill="#1f2a30" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="start">conditions: jsonb</text><text x="52" y="484" font-size="9" fill="#1f2a30" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="start">version: int</text><rect x="280" y="360" width="200" height="154" fill="#ffffff" stroke="#1f2a30" stroke-width="1" rx="6"/><rect x="288" y="367" width="38" height="12" fill="none" stroke="rgba(31,42,48,0.30)" stroke-width="0.8" rx="2"/><text x="307" y="376" font-size="6.5" fill="#52646c" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.07">ENTITY</text><text x="380" y="385" font-size="12" fill="#1f2a30" font-family="'Geist', system-ui, sans-serif" text-anchor="middle" font-weight="600">ACCESS_REQUEST</text><line x1="280" y1="396" x2="480" y2="396" stroke="rgba(31,42,48,0.22)" stroke-width="1"/><text x="292" y="412" font-size="9" fill="#1f2a30" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="start"># id: uuid</text><text x="292" y="430" font-size="9" fill="#1f2a30" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="start">→ user_id: uuid</text><text x="292" y="448" font-size="9" fill="#1f2a30" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="start">→ resource_id: uuid</text><text x="292" y="466" font-size="9" fill="#1f2a30" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="start">state: enum</text><text x="292" y="484" font-size="9" fill="#1f2a30" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="start">requested_ttl: interval</text><text x="292" y="502" font-size="9" fill="#1f2a30" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="start">decided_by: uuid</text><rect x="520" y="360" width="200" height="154" fill="#ffffff" stroke="#1f2a30" stroke-width="1" rx="6"/><rect x="528" y="367" width="38" height="12" fill="none" stroke="rgba(31,42,48,0.30)" stroke-width="0.8" rx="2"/><text x="547" y="376" font-size="6.5" fill="#52646c" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.07">ENTITY</text><text x="620" y="385" font-size="12" fill="#1f2a30" font-family="'Geist', system-ui, sans-serif" text-anchor="middle" font-weight="600">SESSION</text><line x1="520" y1="396" x2="720" y2="396" stroke="rgba(31,42,48,0.22)" stroke-width="1"/><text x="532" y="412" font-size="9" fill="#1f2a30" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="start"># id: uuid</text><text x="532" y="430" font-size="9" fill="#1f2a30" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="start">→ user_id: uuid</text><text x="532" y="448" font-size="9" fill="#1f2a30" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="start">→ request_id: uuid</text><text x="532" y="466" font-size="9" fill="#1f2a30" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="start">trust_score: int</text><text x="532" y="484" font-size="9" fill="#1f2a30" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="start">state: enum</text><text x="532" y="502" font-size="9" fill="#1f2a30" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="start">expires_at: timestamptz</text><rect x="780" y="360" width="180" height="154" fill="#ffffff" stroke="#1f2a30" stroke-width="1" rx="6"/><rect x="788" y="367" width="38" height="12" fill="none" stroke="rgba(31,42,48,0.30)" stroke-width="0.8" rx="2"/><text x="807" y="376" font-size="6.5" fill="#52646c" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.07">ENTITY</text><text x="870" y="385" font-size="12" fill="#1f2a30" font-family="'Geist', system-ui, sans-serif" text-anchor="middle" font-weight="600">AUDIT_EVENT</text><line x1="780" y1="396" x2="960" y2="396" stroke="rgba(31,42,48,0.22)" stroke-width="1"/><text x="792" y="412" font-size="9" fill="#1f2a30" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="start"># id: uuid</text><text x="792" y="430" font-size="9" fill="#1f2a30" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="start">seq: bigint</text><text x="792" y="448" font-size="9" fill="#1f2a30" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="start">actor_id: uuid</text><text x="792" y="466" font-size="9" fill="#1f2a30" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="start">session_id: uuid</text><text x="792" y="484" font-size="9" fill="#1f2a30" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="start">type: enum</text><text x="792" y="502" font-size="9" fill="#1f2a30" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="start">prev_hash: bytea</text><line x1="40" y1="662" x2="920" y2="662" stroke="rgba(31,42,48,0.10)" stroke-width="0.8"/><text x="40" y="680" font-size="8" fill="#5c6f77" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="start" letter-spacing="0.16">LEGEND · KEY</text><rect x="152" y="667" width="14" height="11" fill="#ffffff" stroke="#1f2a30" stroke-width="1" rx="2"/><text x="172" y="676" font-size="8.5" fill="#52646c" font-family="'Geist', system-ui, sans-serif" text-anchor="start">Entity</text><rect x="230.6" y="667" width="14" height="11" fill="rgba(181,68,39,0.08)" stroke="#b54427" stroke-width="1" rx="2"/><text x="250.6" y="676" font-size="8.5" fill="#52646c" font-family="'Geist', system-ui, sans-serif" text-anchor="start">Aggregate root</text><line x1="350" y1="673" x2="374" y2="673" stroke="#52646c" stroke-width="1.2" marker-end="url(#fig03-arrow)"/><text x="387" y="676" font-size="8.5" fill="#52646c" font-family="'Geist', system-ui, sans-serif" text-anchor="start">Relationship</text><text x="476.2" y="676" font-size="8.5" fill="#52646c" font-family="'Geist', system-ui, sans-serif" text-anchor="start"># primary key   → foreign key</text></svg></div><p class="caption"><b>Eight entities, seven relationships.</b> USER is the aggregate root. DEVICE and PASSKEY form the identity chain. RESOURCE is the target catalog. POLICY governs sessions. ACCESS_REQUEST records the ask; SESSION records the grant. AUDIT_EVENT is the append-only record, with a nullable session link so history survives deletion. Primary keys are marked <code>#</code>; foreign keys use an arrow.</p></figure>
+
+    <div class="prose">
+      <h2>The access-control core</h2>
+      <p>The model tells one story: a user asks for a resource, a policy governs the session, and an audit event records what happened. <strong>USER</strong> is the aggregate root because every other identity record hangs from it. <strong>DEVICE</strong> and <strong>PASSKEY</strong> form a chain: the user owns the device, the device holds the credential. <strong>RESOURCE</strong> is a catalog entry, not a URL copied into a request, so policy can target a named target rather than a string.</p>
+      <p><strong>ACCESS_REQUEST</strong> is the ask. It has a requested TTL, a state, and a decision actor. <strong>SESSION</strong> is the grant. It points back to the request when there was one, and carries the current score and expiry. That distinction is what makes JIT possible: a request can wait for a human while no session exists. <strong>AUDIT_EVENT</strong> is the record, and it is deliberately not a child of session.</p>
+
+      <div class="table-wrap"><table><caption>Table 1 &mdash; The eight logical entities and the attributes that carry the design.</caption><thead><tr><th>Entity</th><th>What it represents</th><th>Key attributes</th></tr></thead><tbody><tr><td><code>USER</code></td><td>A person with a role and an account status.</td><td><code>id</code>, <code>email</code>, <code>role</code>, <code>status</code></td></tr><tr><td><code>DEVICE</code></td><td>An enrolled endpoint and its latest posture state.</td><td><code>id</code>, <code>user_id</code>, <code>hostname</code>, <code>os_version</code>, <code>encrypted</code>, <code>compliant</code></td></tr><tr><td><code>PASSKEY</code></td><td>A public-key credential bound to a device and a user.</td><td><code>id</code>, <code>device_id</code>, <code>aaguid</code>, <code>public_key</code>, <code>sign_count</code></td></tr><tr><td><code>RESOURCE</code></td><td>A protected web app or SSH host in the catalog.</td><td><code>id</code>, <code>name</code>, <code>kind</code>, <code>host</code>, <code>sensitivity</code></td></tr><tr><td><code>POLICY</code></td><td>A versioned condition set and effect.</td><td><code>id</code>, <code>effect</code>, <code>conditions</code>, <code>version</code></td></tr><tr><td><code>ACCESS_REQUEST</code></td><td>A request for a resource and action, with a TTL and a decision state.</td><td><code>id</code>, <code>user_id</code>, <code>resource_id</code>, <code>state</code>, <code>requested_ttl</code></td></tr><tr><td><code>SESSION</code></td><td>A live grant with a score, state, and expiry.</td><td><code>id</code>, <code>user_id</code>, <code>request_id</code>, <code>trust_score</code>, <code>expires_at</code></td></tr><tr><td><code>AUDIT_EVENT</code></td><td>An append-only record of a decision or lifecycle event.</td><td><code>id</code>, <code>seq</code>, <code>actor_id</code>, <code>session_id</code>, <code>type</code>, <code>prev_hash</code></td></tr></tbody></table></div>
+
+      <h2>Relationships and delete semantics</h2>
+      <p>Cardinality alone does not tell you what happens when a row is deleted. The model therefore carries a delete rule for each relationship, and the physical schema implements it with foreign-key actions. The rule follows the evidence: a device or credential has no meaning without its user, so it cascades; a resource or policy cited by history cannot vanish, so it restricts; a session link in the audit log is nulled, never cascaded.</p>
+
+      <div class="table-wrap"><table class="compact"><caption>Table 2 &mdash; Cardinalities and the delete semantics they imply in the physical schema.</caption><thead><tr><th>Relationship</th><th>Cardinality</th><th>Delete rule</th><th>Why</th></tr></thead><tbody><tr><td>USER &rarr; DEVICE</td><td>1 : N</td><td>Cascade</td><td>A device has no meaning without its owner.</td></tr><tr><td>DEVICE &rarr; PASSKEY</td><td>1 : N</td><td>Cascade</td><td>A credential is bound to one device.</td></tr><tr><td>USER &rarr; ACCESS_REQUEST</td><td>1 : N</td><td>Cascade</td><td>Requests are owned by the requester.</td></tr><tr><td>RESOURCE &rarr; ACCESS_REQUEST</td><td>1 : N</td><td>Restrict</td><td>A resource with history cannot be removed silently.</td></tr><tr><td>ACCESS_REQUEST &rarr; SESSION</td><td>0..1 : 1</td><td>Set null</td><td>A session can outlive a request record.</td></tr><tr><td>POLICY &rarr; SESSION</td><td>1 : N</td><td>Restrict</td><td>A policy version cited by a session cannot be deleted.</td></tr><tr><td>SESSION &rarr; AUDIT_EVENT</td><td>1 : N</td><td>Set null</td><td>Evidence survives the session it describes.</td></tr></tbody></table></div>
+
+      <h2>Three modelling decisions</h2>
+      <div class="cards">
+        <div class="card">
+          <div class="card-label">01 / Catalog</div>
+          <h3>Resource is not a URL</h3>
+          <p>A resource has a stable id, a kind (<code>web</code> or <code>ssh</code>), a host, and a sensitivity class. The proxy and the CA resolve the id to a target. An unknown id is a hard gate, not a policy miss.</p>
+        </div>
+        <div class="card">
+          <div class="card-label">02 / Evidence</div>
+          <h3>Audit outlives session</h3>
+          <p><code>session_id</code> is nullable. The actor is stored as a UUID without a cascading foreign key. Deleting a user or a session must not erase the record that a decision happened.</p>
+        </div>
+        <div class="card">
+          <div class="card-label">03 / History</div>
+          <h3>Policy is versioned</h3>
+          <p>A decision pins the policy id and version. A later edit creates a new version; it does not rewrite the explanation for an old session. The physical schema makes the published version immutable.</p>
+        </div>
+      </div>
+
+      <h2>What the model does not store</h2>
+      <p>There is no private key, no biometric template, no raw packet, and no file content. The passkey table holds a public key and a counter. The audit table holds payload hashes, not payloads. The vault is a separate encrypted store because its contents have a different threat model and a different access path. The logical model is intentionally boring about secrets: it records only what is needed to make and defend a decision.</p>
+
+      <div class="table-wrap"><table class="compact"><caption>Table 3 &mdash; Data classification. No biometrics, packet payloads, or file contents are stored.</caption><thead><tr><th>Data group</th><th>Examples</th><th>Sensitivity</th><th>Retention</th></tr></thead><tbody><tr><td>Identity</td><td>Email, role, account status</td><td>PII; access-controlled</td><td>Life of the account</td></tr><tr><td>Device posture</td><td>Hostname, OS version, disk and root flags</td><td>Internal; potentially sensitive</td><td>90 days hot, then aggregate</td></tr><tr><td>Credentials</td><td>Public key, AAGUID, signature counter</td><td>Public material; integrity-critical</td><td>Life of the credential plus audit</td></tr><tr><td>Policy</td><td>Conditions, effect, version, publisher</td><td>Confidential</td><td>Versioned indefinitely</td></tr><tr><td>Access and session</td><td>Resource, action, trust score, state</td><td>Confidential</td><td>1 year</td></tr><tr><td>Audit</td><td>Actor, event type, hashes, sequence</td><td>Integrity-critical</td><td>1 year, append-only</td></tr></tbody></table></div>
+
+      <div class="callout"><span class="k">From logical to physical</span><p>The next page turns these entities into PostgreSQL tables. It splits the schema into an identity slice and an access slice, repeats the <code>users</code> table as the join point, and makes every cascade and restrict rule explicit.</p></div>
+
+      <div class="link-row"><a href="domain-model.html">Domain model &rarr;</a><a href="database-schema.html">Database schema &rarr;</a><a href="risk-scoring.html">Risk report &rarr;</a><a href="api.html">API contract &rarr;</a></div>
+    </div>
+  </div>
+  <nav class="page-nav" aria-label="Previous and next pages"><a href="domain-model.html"><span class="dir">Previous</span><span class="name">Domain</span></a><a class="next" href="database-schema.html"><span class="dir">Next</span><span class="name">Schema</span></a></nav>
+</div>
+
+</main>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div>ZeroGate design dossier &middot; v0.9 &middot; October 2026<br>
+      NIST SP 800-207 access broker &middot; single-tenant lab scope</div>
+    <div>Diagram system adapted from <a href="https://github.com/cathrynlavery/diagram-design">cathrynlavery/diagram-design</a> (MIT).<br>
+      <a href="../README.md">README</a> &middot; <a href="openapi.yaml">openapi.yaml</a> &middot;
+      <a href="risk-scoring-report.md">risk report</a> &middot;
+      <a href="functional-requirements.md">requirements</a></div>
+  </div>
+</footer>
+</body>
+</html>

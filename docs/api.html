@@ -1,0 +1,809 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>API reference &middot; ZeroGate</title>
+<meta name="description" content="The OpenAPI 3.1 contract for identity, posture, authorization, sessions, SSH, JIT, policy, risk, audit, and vault.">
+<meta name="color-scheme" content="light">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --paper: #f4f1e9;
+  --paper-2: #ebe6da;
+  --white: #ffffff;
+  --ink: #1f2a30;
+  --muted: #52646c;
+  --soft: #5c6f77;
+  --rule: rgba(31,42,48,0.12);
+  --rule-solid: #c9c2b4;
+  --accent: #b54427;
+  --accent-tint: rgba(181,68,39,0.08);
+  --link: #2c5d8a;
+  --sans: 'Geist', system-ui, sans-serif;
+  --serif: 'Instrument Serif', 'Noto Serif', serif;
+  --mono: 'Geist Mono', ui-monospace, monospace;
+}
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--sans);
+  background: var(--paper);
+  color: var(--ink);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+::selection { background: rgba(181,68,39,0.18); }
+
+/* ---------- header ---------- */
+.site-header {
+  border-bottom: 1px solid var(--rule);
+  padding: 18px 0;
+}
+.header-inner {
+  width: min(1300px, calc(100% - 64px));
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+.brand {
+  display: flex; align-items: center; gap: 12px;
+  text-decoration: none; color: var(--ink);
+}
+.brand-mark {
+  width: 30px; height: 30px;
+  display: grid; place-items: center;
+  background: var(--accent); color: var(--paper);
+  font-family: var(--serif); font-size: 15px; line-height: 1;
+  border-radius: 3px;
+}
+.brand-text { display: flex; flex-direction: column; gap: 1px; }
+.brand-name { font-family: var(--serif); font-size: 19px; letter-spacing: -0.01em; }
+.brand-sub {
+  font-family: var(--mono); font-size: 8px; letter-spacing: 0.18em;
+  text-transform: uppercase; color: var(--muted);
+}
+.site-nav { display: flex; align-items: center; gap: 22px; flex-wrap: wrap; }
+.site-nav a {
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--muted); text-decoration: none;
+  border-bottom: 1px solid transparent; padding-bottom: 2px;
+}
+.site-nav a:hover, .site-nav a[aria-current="page"] {
+  color: var(--ink); border-bottom-color: var(--accent);
+}
+
+/* ---------- page ---------- */
+.wrap { width: min(1300px, calc(100% - 64px)); margin: 0 auto; }
+.page { padding: 64px 0 72px; }
+.chapter {
+  display: flex; align-items: center; gap: 12px; margin-bottom: 18px;
+}
+.chapter-num {
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em;
+  color: var(--accent); border: 1px solid rgba(181,68,39,0.35);
+  border-radius: 2px; padding: 3px 6px; line-height: 1;
+}
+.eyebrow {
+  font-family: var(--mono); font-size: 10px; font-weight: 500;
+  letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted);
+}
+h1 {
+  font-family: var(--serif); font-weight: 400; font-size: clamp(2.3rem, 4vw + 1rem, 3.6rem);
+  line-height: 1.02; letter-spacing: -0.025em; max-width: 980px;
+}
+.lede {
+  font-size: 19px; line-height: 1.62; color: var(--muted);
+  max-width: 790px; margin-top: 20px;
+}
+.meta-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 26px; }
+.chip {
+  font-family: var(--mono); font-size: 9px; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--muted);
+  border: 1px solid var(--rule); border-radius: 2px;
+  padding: 5px 8px; background: rgba(255,255,255,0.45);
+}
+.chip strong { color: var(--ink); font-weight: 500; }
+
+/* ---------- diagram ---------- */
+.diagram-block { margin: 44px 0 0; }
+.diagram-top {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 20px; border-top: 1px solid var(--rule); padding-top: 16px;
+}
+.diagram-label {
+  font-family: var(--mono); font-size: 9px; letter-spacing: 0.16em;
+  text-transform: uppercase; color: var(--soft);
+}
+.diagram-hint {
+  display: none; white-space: nowrap;
+  font-family: var(--mono); font-size: 9px; letter-spacing: 0.04em;
+  color: var(--soft); text-align: right;
+}
+.diagram-container {
+  width: 100%; overflow-x: auto; margin-top: 8px;
+  scrollbar-width: thin; scrollbar-color: var(--rule-solid) transparent;
+}
+.diagram-container svg { width: 100%; display: block; }
+.caption {
+  font-size: 12.5px; line-height: 1.6; color: var(--muted);
+  max-width: 900px; margin-top: 12px;
+}
+.caption b { color: var(--ink); font-weight: 600; }
+
+/* ---------- cards ---------- */
+.cards {
+  display: grid; grid-template-columns: 1.15fr 0.95fr 0.9fr;
+  gap: 16px; margin: 40px 0 0;
+}
+.cards.two { grid-template-columns: 1.25fr 0.75fr; }
+.cards.four { grid-template-columns: 1.1fr 1fr 0.9fr 0.9fr; }
+.card {
+  background: var(--white); border: 1px solid var(--rule);
+  border-radius: 6px; padding: 20px; min-width: 0;
+}
+.card-label {
+  font-family: var(--mono); font-size: 8px; letter-spacing: 0.16em;
+  text-transform: uppercase; color: var(--soft); margin-bottom: 10px;
+}
+.card h3 {
+  font-size: 15px; font-weight: 600; letter-spacing: -0.01em;
+  line-height: 1.3; margin-bottom: 10px;
+}
+.card p, .card li { font-size: 12.5px; line-height: 1.62; color: var(--muted); }
+.card ul, .card ol { padding-left: 16px; display: grid; gap: 6px; }
+.card li::marker { color: var(--accent); }
+.card .rule-list { list-style: none; padding-left: 0; }
+.card .rule-list li {
+  border-top: 1px solid var(--rule); padding-top: 8px;
+}
+.card .rule-list li:first-child { border-top: 0; padding-top: 0; }
+.card .mono { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.02em; color: var(--ink); }
+.card-dot {
+  display: inline-block; width: 7px; height: 7px; border-radius: 50%;
+  margin-right: 7px; vertical-align: 1px;
+}
+.dot-accent { background: var(--accent); }
+.dot-ink { background: var(--ink); }
+.dot-muted { background: var(--muted); }
+.dot-link { background: var(--link); }
+.dot-soft { background: var(--soft); }
+
+/* ---------- prose ---------- */
+.prose { max-width: 900px; margin-top: 52px; }
+.prose.wide { max-width: 100%; }
+.prose.wide > p { max-width: 760px; }
+.prose.wide > .callout { max-width: 900px; }
+.prose h2 {
+  font-family: var(--serif); font-weight: 400; font-size: 32px;
+  line-height: 1.12; letter-spacing: -0.02em; margin: 54px 0 16px;
+}
+.prose h2:first-child { margin-top: 0; }
+.prose h3 {
+  font-size: 16px; font-weight: 600; letter-spacing: -0.01em;
+  margin: 32px 0 10px;
+}
+.prose h4 {
+  font-family: var(--mono); font-size: 10px; font-weight: 500;
+  letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);
+  margin: 26px 0 8px;
+}
+.prose p { font-size: 15px; line-height: 1.72; color: var(--muted); margin: 12px 0; }
+.prose p strong, .prose li strong { color: var(--ink); font-weight: 600; }
+.prose ul, .prose ol { margin: 12px 0 12px 22px; display: grid; gap: 7px; }
+.prose li { font-size: 14.5px; line-height: 1.65; color: var(--muted); }
+.prose li::marker { color: var(--accent); }
+.prose a { color: var(--link); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+.prose code {
+  font-family: var(--mono); font-size: 12px; background: var(--paper-2);
+  border: 1px solid rgba(31,42,48,0.06); border-radius: 2px;
+  padding: 1px 4px; color: var(--ink);
+}
+.prose pre {
+  background: var(--ink); color: #ece7db; border-radius: 6px;
+  padding: 20px 22px; overflow-x: auto; margin: 18px 0;
+  font-family: var(--mono); font-size: 12px; line-height: 1.65;
+}
+.prose pre code { background: none; border: 0; padding: 0; color: inherit; }
+.prose blockquote {
+  border-left: 2px solid var(--accent); padding: 2px 0 2px 20px;
+  margin: 22px 0; font-family: var(--serif); font-size: 21px;
+  line-height: 1.5; color: var(--ink);
+}
+.prose blockquote p { font-size: inherit; color: inherit; }
+.prose hr { border: 0; border-top: 1px solid var(--rule); margin: 36px 0; }
+
+/* ---------- tables ---------- */
+.table-wrap { width: 100%; overflow-x: auto; margin: 18px 0 24px; }
+table {
+  width: 100%; border-collapse: collapse; font-size: 12.5px;
+  line-height: 1.5; background: rgba(255,255,255,0.38);
+}
+th {
+  font-family: var(--mono); font-size: 8.5px; font-weight: 500;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--soft);
+  text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--ink);
+  vertical-align: bottom; white-space: nowrap;
+}
+td {
+  padding: 10px 12px; border-bottom: 1px solid var(--rule);
+  color: var(--muted); vertical-align: top;
+}
+td:first-child { color: var(--ink); }
+tbody tr:hover td { background: rgba(255,255,255,0.55); }
+td code, th code { font-family: var(--mono); font-size: 11px; }
+table.compact td, table.compact th { padding: 7px 10px; }
+
+/* ---------- method tags ---------- */
+.method {
+  display: inline-block; font-family: var(--mono); font-size: 9px;
+  font-weight: 500; letter-spacing: 0.06em; line-height: 1;
+  padding: 4px 5px 3px; border-radius: 2px; min-width: 42px;
+  text-align: center; color: var(--ink); border: 1px solid var(--rule-solid);
+  background: var(--paper);
+}
+.method.get { color: #2c5d8a; border-color: rgba(44,93,138,0.4); background: rgba(44,93,138,0.06); }
+.method.post { color: #6d5a1f; border-color: rgba(109,90,31,0.4); background: rgba(109,90,31,0.06); }
+.method.put, .method.patch { color: #61522b; border-color: rgba(97,82,43,0.4); background: rgba(97,82,43,0.06); }
+.method.delete { color: var(--accent); border-color: rgba(181,68,39,0.4); background: rgba(181,68,39,0.06); }
+
+/* ---------- page nav / footer ---------- */
+.page-nav {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+  margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--rule);
+}
+.page-nav a {
+  display: block; text-decoration: none; color: var(--ink);
+  border: 1px solid var(--rule); border-radius: 6px; padding: 16px 18px;
+  background: rgba(255,255,255,0.35);
+}
+.page-nav a:hover { border-color: var(--rule-solid); background: var(--white); }
+.page-nav .dir {
+  font-family: var(--mono); font-size: 8px; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--soft); display: block; margin-bottom: 5px;
+}
+.page-nav .name { font-family: var(--serif); font-size: 20px; }
+.page-nav .next { text-align: right; }
+.site-footer {
+  border-top: 1px solid var(--rule); padding: 24px 0 40px;
+}
+.footer-inner {
+  width: min(1300px, calc(100% - 64px)); margin: 0 auto;
+  display: flex; justify-content: space-between; gap: 24px; flex-wrap: wrap;
+  font-family: var(--mono); font-size: 9.5px; line-height: 1.7;
+  letter-spacing: 0.04em; color: var(--soft);
+}
+.footer-inner a { color: var(--muted); text-decoration: none; border-bottom: 1px solid var(--rule); }
+
+/* ---------- index ---------- */
+.index-hero { padding: 80px 0 44px; }
+.index-hero h1 { font-size: clamp(3rem, 7vw + 0.5rem, 6.2rem); max-width: 1000px; }
+.index-hero .lede { max-width: 680px; font-size: 20px; }
+.index-rule {
+  display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px;
+  border-top: 1px solid var(--ink); border-bottom: 1px solid var(--rule);
+  padding: 20px 0; margin-top: 40px;
+}
+.index-rule div { display: flex; flex-direction: column; gap: 4px; }
+.index-rule .k {
+  font-family: var(--mono); font-size: 8px; letter-spacing: 0.16em;
+  text-transform: uppercase; color: var(--soft);
+}
+.index-rule .v { font-size: 13px; color: var(--ink); }
+.section-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 20px; margin: 64px 0 20px; border-bottom: 1px solid var(--ink);
+  padding-bottom: 10px;
+}
+.section-head h2 {
+  font-family: var(--serif); font-weight: 400; font-size: 34px;
+  letter-spacing: -0.02em;
+}
+.section-head .count {
+  font-family: var(--mono); font-size: 9px; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--soft);
+}
+.toc-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;
+}
+.toc-grid.four { grid-template-columns: repeat(4, 1fr); }
+.toc-grid .wide { grid-column: span 2; }
+.toc-card {
+  display: block; text-decoration: none; color: var(--ink);
+  background: rgba(255,255,255,0.45); border: 1px solid var(--rule);
+  border-radius: 6px; padding: 20px; min-height: 148px;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+.toc-card:hover { background: var(--white); border-color: var(--rule-solid); }
+.toc-card .num {
+  font-family: var(--mono); font-size: 9px; letter-spacing: 0.1em;
+  color: var(--accent); margin-bottom: 18px; display: block;
+}
+.toc-card h3 {
+  font-family: var(--serif); font-weight: 400; font-size: 24px;
+  line-height: 1.1; letter-spacing: -0.015em; margin-bottom: 8px;
+}
+.toc-card p { font-size: 12.5px; line-height: 1.55; color: var(--muted); }
+.toc-card .type {
+  display: block; margin-top: 14px; font-family: var(--mono);
+  font-size: 8px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--soft);
+}
+.toc-card.accent { border-color: rgba(181,68,39,0.4); background: var(--accent-tint); }
+.toc-card.accent:hover { background: rgba(181,68,39,0.12); }
+.manifest {
+  margin-top: 64px; border-top: 1px solid var(--ink); padding-top: 20px;
+  display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 32px;
+}
+.manifest p { font-size: 13px; line-height: 1.65; color: var(--muted); }
+.manifest h3 {
+  font-family: var(--mono); font-size: 9px; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--soft); margin-bottom: 10px;
+}
+.manifest ul { list-style: none; display: grid; gap: 6px; }
+.manifest li { font-size: 12.5px; color: var(--muted); }
+.manifest li span { color: var(--ink); font-family: var(--mono); font-size: 10px; }
+
+/* ---------- risk specific ---------- */
+.risk-band {
+  display: grid; grid-template-columns: 1.4fr 1fr 1fr 1.4fr;
+  border: 1px solid var(--rule); border-radius: 6px; overflow: hidden;
+  margin: 24px 0;
+}
+.risk-band div { padding: 14px 16px; border-left: 1px solid var(--rule); }
+.risk-band div:first-child { border-left: 0; }
+.risk-band .band-name {
+  font-family: var(--mono); font-size: 9px; letter-spacing: 0.12em;
+  text-transform: uppercase; margin-bottom: 4px;
+}
+.risk-band .band-range { font-family: var(--serif); font-size: 26px; line-height: 1; }
+.risk-band .band-action { font-size: 11px; color: var(--muted); margin-top: 6px; }
+.band-allow { background: rgba(111,130,100,0.10); }
+.band-step { background: rgba(166,124,61,0.10); }
+.band-approve { background: rgba(44,93,138,0.08); }
+.band-deny { background: rgba(181,68,39,0.10); }
+
+/* ---------- additions for the dossier ---------- */
+.skip {
+  position: absolute; left: -9999px; top: 0; z-index: 20;
+  background: var(--ink); color: var(--paper); padding: 10px 14px;
+  font-family: var(--mono); font-size: 11px; text-decoration: none;
+}
+.skip:focus { left: 16px; top: 16px; }
+.figure-stack .diagram-block { margin-top: 40px; }
+.figure-stack .diagram-block:first-child { margin-top: 44px; }
+.callout {
+  border: 1px solid var(--rule); border-left: 2px solid var(--accent);
+  background: rgba(255,255,255,0.46); border-radius: 4px;
+  padding: 16px 20px; margin: 22px 0;
+}
+.callout .k {
+  font-family: var(--mono); font-size: 8px; letter-spacing: 0.16em;
+  text-transform: uppercase; color: var(--soft); display: block; margin-bottom: 7px;
+}
+.callout p { margin: 0; font-size: 13px; line-height: 1.65; color: var(--muted); }
+.callout p + p { margin-top: 8px; }
+.badge {
+  display: inline-block; font-family: var(--mono); font-size: 8px;
+  letter-spacing: 0.06em; text-transform: uppercase; line-height: 1;
+  padding: 4px 6px 3px; border: 1px solid var(--rule-solid);
+  border-radius: 2px; white-space: nowrap; color: var(--ink);
+  background: var(--paper);
+}
+.badge.core { color: #3f5a3a; border-color: rgba(63,90,58,0.35); background: rgba(63,90,58,0.07); }
+.badge.add-on { color: #6d5a1f; border-color: rgba(109,90,31,0.35); background: rgba(109,90,31,0.07); }
+.badge.stretch { color: var(--link); border-color: rgba(44,93,138,0.35); background: rgba(44,93,138,0.07); }
+.stat-strip {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  border-top: 1px solid var(--ink); border-bottom: 1px solid var(--rule);
+  margin: 36px 0 0;
+}
+.stat-strip .stat { padding: 16px 18px 14px; border-left: 1px solid var(--rule); }
+.stat-strip .stat:first-child { border-left: 0; padding-left: 0; }
+.stat-strip .n {
+  display: block; font-family: var(--serif); font-size: 34px;
+  line-height: 1; letter-spacing: -0.02em;
+}
+.stat-strip .l {
+  display: block; margin-top: 5px; font-family: var(--mono);
+  font-size: 8px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--soft);
+}
+.api-table td:first-child { width: 66px; white-space: nowrap; }
+.api-table td:nth-child(2) { white-space: nowrap; }
+.api-table .path {
+  font-family: var(--mono); font-size: 11.5px; color: var(--ink);
+  letter-spacing: -0.01em;
+}
+.api-table td:last-child { font-size: 11.5px; }
+caption {
+  caption-side: top; text-align: left; padding-bottom: 8px;
+  font-family: var(--mono); font-size: 8px; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--soft);
+}
+.mini-note {
+  font-family: var(--mono); font-size: 9px; line-height: 1.6;
+  letter-spacing: 0.03em; color: var(--soft); margin-top: 10px;
+}
+.link-row { display: flex; gap: 18px; flex-wrap: wrap; margin-top: 18px; }
+.link-row a {
+  font-family: var(--mono); font-size: 9px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--link); text-decoration: none;
+  border-bottom: 1px solid rgba(44,93,138,0.35); padding-bottom: 3px;
+}
+.link-row a:hover { border-bottom-color: var(--link); }
+.pdf-row { margin-top: 16px; }
+.pdf-download {
+  display: inline-flex; align-items: center; gap: 9px;
+  font-family: var(--mono); font-size: 9px; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--ink); text-decoration: none;
+  border: 1px solid var(--rule-solid); padding: 8px 11px;
+  background: rgba(255,255,255,0.5); border-radius: 2px;
+}
+.pdf-download:hover { border-color: var(--ink); background: var(--white); }
+.pdf-download .pdf-tag { color: var(--accent); font-weight: 600; letter-spacing: 0.12em; }
+.pdf-download .arrow { color: var(--accent); }
+
+/* ---------- report layout ---------- */
+.report-layout {
+  display: grid; grid-template-columns: minmax(0, 1fr) 216px;
+  gap: 56px; align-items: start; margin-top: 44px;
+}
+.report-body.prose { max-width: none; margin-top: 0; }
+.report-aside {
+  position: sticky; top: 22px; border-top: 1px solid var(--ink);
+  padding-top: 12px;
+}
+.report-aside .card-label { margin-bottom: 12px; }
+.report-aside nav { display: grid; gap: 7px; }
+.report-aside a {
+  font-family: var(--mono); font-size: 9px; line-height: 1.5;
+  letter-spacing: 0.02em; color: var(--muted); text-decoration: none;
+  display: block; border-left: 1px solid transparent; padding-left: 9px;
+}
+.report-aside a:hover { color: var(--ink); border-left-color: var(--accent); }
+.report-aside .aside-rule {
+  border-top: 1px solid var(--rule); margin: 14px 0 12px;
+}
+.report-aside .aside-meta {
+  font-family: var(--mono); font-size: 8px; letter-spacing: 0.08em;
+  line-height: 1.7; color: var(--soft); text-transform: uppercase;
+}
+.report-body h2, .report-body h3 { scroll-margin-top: 18px; }
+.report-body h2:first-child { margin-top: 0; }
+.report-body table { font-size: 11.8px; }
+.report-body td, .report-body th { padding: 8px 10px; }
+.report-body .table-wrap { margin: 14px 0 20px; }
+.report-body pre { font-size: 11.5px; }
+
+/* ---------- API reference ---------- */
+.api-mobile-note { display: none; }
+.api-group { margin-top: 46px; }
+.api-group-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 20px; border-top: 1px solid var(--ink); padding-top: 10px;
+  margin-bottom: 4px;
+}
+.api-group-head h2 {
+  font-family: var(--serif); font-weight: 400; font-size: 29px;
+  letter-spacing: -0.02em; margin: 0;
+}
+.api-group-head .count {
+  font-family: var(--mono); font-size: 8px; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--soft); white-space: nowrap;
+}
+.api-group-desc {
+  font-size: 13px; line-height: 1.6; color: var(--muted);
+  max-width: 760px; margin: 0 0 12px;
+}
+.api-table td { vertical-align: top; }
+.api-table tr[id] { scroll-margin-top: 24px; }
+.api-table .op-id {
+  display: block; font-family: var(--mono); font-size: 8px;
+  letter-spacing: 0.03em; color: var(--soft); margin-top: 3px;
+}
+.api-table .auth {
+  font-family: var(--mono); font-size: 8px; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--muted); white-space: nowrap;
+}
+.api-table .success {
+  font-family: var(--mono); font-size: 9px; color: var(--muted);
+  white-space: nowrap;
+}
+.api-deep {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+  margin-top: 26px;
+}
+.api-deep .card { background: rgba(255,255,255,0.5); }
+.api-deep .card h3 { font-family: var(--serif); font-size: 24px; font-weight: 400; }
+.api-deep .card .mono { margin-bottom: 10px; }
+.api-deep .card pre { margin: 10px 0 0; font-size: 10.5px; padding: 14px 16px; }
+.api-deep .card .method { margin-right: 6px; }
+.schema-grid { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.schema-chip {
+  font-family: var(--mono); font-size: 8.5px; letter-spacing: 0.02em;
+  color: var(--muted); border: 1px solid var(--rule); border-radius: 2px;
+  padding: 4px 6px; background: rgba(255,255,255,0.45);
+}
+.op-index { display: grid; gap: 8px; }
+.op-index a {
+  display: flex; gap: 10px; align-items: baseline; text-decoration: none;
+  color: var(--muted); font-size: 12.5px;
+}
+.op-index a:hover { color: var(--ink); }
+.op-index .method { flex: 0 0 44px; }
+.op-index .path { font-family: var(--mono); font-size: 10.5px; color: var(--ink); }
+
+/* ---------- extra editorial bits ---------- */
+.hero-em { color: var(--accent); font-style: italic; }
+.section-note {
+  font-family: var(--mono); font-size: 9px; letter-spacing: 0.04em;
+  color: var(--soft); margin-top: 10px;
+}
+.band-strip {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  border: 1px solid var(--rule); border-radius: 6px; overflow: hidden;
+  margin: 24px 0 28px;
+}
+.band-strip div { padding: 16px 18px; border-left: 1px solid var(--rule); }
+.band-strip div:first-child { border-left: 0; }
+.band-strip .k {
+  font-family: var(--mono); font-size: 8px; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--soft); display: block; margin-bottom: 5px;
+}
+.band-strip .v { font-family: var(--serif); font-size: 22px; line-height: 1; display: block; }
+.band-strip .d { font-size: 10.5px; line-height: 1.45; color: var(--muted); margin-top: 6px; display: block; }
+.rule-table td:first-child { font-family: var(--mono); font-size: 10px; white-space: nowrap; }
+.step-table td:first-child {
+  font-family: var(--mono); font-size: 9px; color: var(--accent);
+  width: 42px; white-space: nowrap;
+}
+.step-table td:nth-child(2) { color: var(--ink); white-space: nowrap; }
+.step-table td:nth-child(3) { font-family: var(--mono); font-size: 10px; white-space: nowrap; }
+.kv { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 18px; }
+.kv .card { padding: 16px 18px; }
+.kv .card h3 { font-size: 13px; }
+.path-row {
+  display: grid; grid-template-columns: 54px 1.1fr 1.6fr; gap: 16px;
+  align-items: start; border-top: 1px solid var(--rule); padding: 14px 0;
+}
+.path-row:last-child { border-bottom: 1px solid var(--rule); }
+.path-row .n {
+  font-family: var(--mono); font-size: 9px; letter-spacing: 0.1em;
+  color: var(--accent); padding-top: 2px;
+}
+.path-row h3 { font-size: 14px; font-weight: 600; margin-bottom: 3px; }
+.path-row p { font-size: 12px; line-height: 1.6; color: var(--muted); }
+.path-row a { color: var(--link); text-decoration: none; border-bottom: 1px solid rgba(44,93,138,0.3); }
+
+/* ---------- responsive ---------- */
+@media (max-width: 980px) {
+  .report-layout { grid-template-columns: minmax(0, 1fr); gap: 24px; }
+  .report-aside { display: none; }
+  .diagram-hint { display: inline; }
+  .api-deep { grid-template-columns: 1fr; }
+  .band-strip { grid-template-columns: 1fr 1fr; }
+  .band-strip div:nth-child(3) { border-left: 0; }
+  .band-strip div:nth-child(n+3) { border-top: 1px solid var(--rule); }
+  .cards, .cards.four { grid-template-columns: 1fr 1fr; }
+  .cards .card:last-child { grid-column: span 2; }
+  .toc-grid, .toc-grid.four { grid-template-columns: 1fr 1fr; }
+  .toc-grid .wide { grid-column: span 2; }
+  .manifest { grid-template-columns: 1fr 1fr; }
+  .index-rule { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 700px) {
+  .header-inner, .wrap, .footer-inner { width: calc(100% - 40px); }
+  .api-table th:nth-child(4), .api-table td:nth-child(4),
+  .api-table th:nth-child(5), .api-table td:nth-child(5) { display: none; }
+  .api-table td:nth-child(2) { white-space: normal; }
+  .api-table .path { overflow-wrap: anywhere; }
+  .api-mobile-note { display: block; }
+  .report-body td:first-child { white-space: nowrap; }
+  .site-header { padding: 14px 0; }
+  .site-nav { gap: 12px; }
+  .site-nav a { font-size: 9px; }
+  .page { padding: 44px 0 56px; }
+  h1 { font-size: clamp(2rem, 10vw, 3rem); }
+  .lede { font-size: 17px; }
+  .cards, .cards.two, .cards.four, .toc-grid, .toc-grid.four, .manifest, .index-rule { grid-template-columns: 1fr; }
+  .cards .card:last-child, .toc-grid .wide { grid-column: auto; }
+  .page-nav { grid-template-columns: 1fr; }
+  .stat-strip { grid-template-columns: 1fr 1fr; }
+  .stat-strip .stat:nth-child(3) { border-left: 0; padding-left: 0; }
+  .stat-strip .stat:nth-child(n+3) { border-top: 1px solid var(--rule); }
+  .risk-band { grid-template-columns: 1fr 1fr; }
+  .risk-band div:nth-child(3) { border-left: 0; }
+  .risk-band div:nth-child(n+3) { border-top: 1px solid var(--rule); }
+  .prose h2 { font-size: 28px; }
+  .path-row { grid-template-columns: 38px 1fr; }
+  .path-row p { grid-column: 2; }
+}
+@media print {
+  .site-header, .site-footer, .page-nav, .diagram-hint, .report-aside { display: none; }
+  body { background: #fff; }
+  .page { padding: 0; }
+  .wrap { width: 100%; }
+  .report-layout { display: block; margin-top: 24px; }
+  .diagram-container { overflow-x: visible; }
+  .diagram-container svg { min-width: 0 !important; }
+  .card, .callout, .risk-band, .band-strip { break-inside: avoid; }
+  table { break-inside: auto; }
+  tr { break-inside: avoid; }
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="site-header">
+  <div class="header-inner">
+    <a class="brand" href="index.html" aria-label="ZeroGate design dossier, home">
+      <span class="brand-mark" aria-hidden="true">ZG</span>
+      <span class="brand-text">
+        <span class="brand-name">ZeroGate</span>
+        <span class="brand-sub">Zero-trust access broker &middot; dossier</span>
+      </span>
+    </a>
+    <nav class="site-nav" aria-label="Dossier sections">
+      <a href="index.html">Atlas</a><a href="architecture.html">System</a><a href="domain-model.html">Domain</a><a href="data-model.html">Data</a><a href="flow-passkey.html">Flows</a><a href="policy-engine.html">Policy</a><a href="state-session.html">States</a><a href="risk-scoring.html">Risk</a><a href="requirements.html">Requirements</a><a href="api.html" aria-current="page">API</a>
+    </nav>
+  </div>
+</header>
+<main id="main">
+
+<div class="wrap">
+  <div class="page">
+    <header class="page-head"><div class="chapter"><span class="chapter-num">15</span><span class="eyebrow">CONTRACT / API</span></div><h1>One contract,<br>every gate.</h1><p class="lede">The OpenAPI 3.1 document is the interface between the portal, the two enforcement points, the Policy Administrator, and the admin console. It exposes 42 paths and 53 operations over twelve tags. The central call is <code>POST /v1/authorize</code>; every enforcement path speaks the same decision shape.</p><div class="meta-row"><span class="chip">OPENAPI <strong>3.1</strong></span><span class="chip">42 <strong>paths</strong></span><span class="chip">53 <strong>operations</strong></span><span class="chip">76 <strong>schemas</strong></span></div></header>
+    <div class="stat-strip">
+      <div class="stat"><span class="n">42</span><span class="l">paths</span></div>
+      <div class="stat"><span class="n">53</span><span class="l">operations</span></div>
+      <div class="stat"><span class="n">76</span><span class="l">schemas</span></div>
+      <div class="stat"><span class="n">12</span><span class="l">tags</span></div>
+    </div>
+
+    <div class="callout" style="margin-top:28px;max-width:900px">
+      <span class="k">Source of truth</span>
+      <p>The rendered index on this page is generated from <a href="openapi.yaml"><code>openapi.yaml</code></a>. If the two disagree, the YAML wins. The spec is validated with Redocly and a local reference checker in CI.</p>
+    </div>
+
+    <div class="api-deep">
+      <div class="card">
+        <div class="card-label"><span class="method post">post</span> /v1/authorize</div>
+        <h3>The decision shape</h3>
+        <p>One call returns the decision, band, score, reason codes, signals, obligations, session grant, and audit id. Enforcement points never see a different schema.</p>
+        <pre><code class="language-json">{
+  &quot;decision&quot;: &quot;ALLOW&quot;,
+  &quot;band&quot;: &quot;ALLOW&quot;,
+  &quot;trust_score&quot;: 92,
+  &quot;reason_codes&quot;: [&quot;BAND_ALLOW&quot;],
+  &quot;signals&quot;: [],
+  &quot;ml_adjustment&quot;: 0,
+  &quot;model_version&quot;: &quot;iforest-0.3.0&quot;,
+  &quot;policy_id&quot;: &quot;pol_web_default&quot;,
+  &quot;policy_version&quot;: 12,
+  &quot;obligations&quot;: [{&quot;type&quot;: &quot;limit_ttl&quot;, &quot;seconds&quot;: 1800}],
+  &quot;session&quot;: {
+    &quot;id&quot;: &quot;ses_01J8Z8&quot;,
+    &quot;state&quot;: &quot;ACTIVE&quot;,
+    &quot;trust_score&quot;: 92,
+    &quot;expires_at&quot;: &quot;2026-10-14T10:42:00Z&quot;
+  },
+  &quot;audit_id&quot;: &quot;evt_01J8Z9K4&quot;,
+  &quot;decided_at&quot;: &quot;2026-10-14T10:12:00Z&quot;,
+  &quot;correlation_id&quot;: &quot;req_5f2b1c&quot;
+}</code></pre>
+      </div>
+      <div class="card">
+        <div class="card-label"><span class="method post">post</span> /v1/sessions/{sessionId}/kill</div>
+        <h3>The idempotent kill</h3>
+        <p>The kill closes the proxy session, revokes certificates, and records the event. A retry with the same idempotency key returns the first result and sets <code>already_killed</code>.</p>
+        <pre><code class="language-json">{
+  &quot;session_id&quot;: &quot;ses_01J8Z8&quot;,
+  &quot;state&quot;: &quot;KILLED&quot;,
+  &quot;killed_at&quot;: &quot;2026-10-14T10:31:07Z&quot;,
+  &quot;revoked_certificate_ids&quot;: [&quot;sshcert_77a1&quot;],
+  &quot;audit_id&quot;: &quot;evt_01J8ZA7Q&quot;,
+  &quot;already_killed&quot;: false
+}</code></pre>
+      </div>
+    </div>
+
+    <div class="prose wide">
+      <h2>Conventions</h2>
+      <div class="cards three">
+        <div class="card">
+          <div class="card-label">01 / Versioning</div>
+          <h3>Everything under <code>/v1</code></h3>
+          <p>Paths are versioned. Additive changes are allowed inside a version; a breaking change requires a new prefix. Deprecated operations carry a <code>deprecated: true</code> flag.</p>
+        </div>
+        <div class="card">
+          <div class="card-label">02 / Auth</div>
+          <h3>Cookie or bearer</h3>
+          <p>Browsers use the <code>zg_session</code> cookie. The CLI and internal services use a short-lived bearer token. Public operations are limited to health, the two passkey ceremonies, the CA public key, and the SPA knock.</p>
+        </div>
+        <div class="card">
+          <div class="card-label">03 / Mutations</div>
+          <h3>Idempotency keys</h3>
+          <p>Every state-changing operation accepts an <code>Idempotency-Key</code>. Replaying the same key with the same body returns the original result; a different body returns <code>409</code>.</p>
+        </div>
+        <div class="card">
+          <div class="card-label">04 / Errors</div>
+          <h3>One envelope</h3>
+          <p>Every error is a <code>Problem</code> with <code>code</code>, <code>message</code>, optional <code>details</code>, and a <code>correlation_id</code>. The UI shows the correlation id, not a stack trace.</p>
+        </div>
+        <div class="card">
+          <div class="card-label">05 / Lists</div>
+          <h3>Cursor pagination</h3>
+          <p>List endpoints take <code>limit</code> and <code>cursor</code> and return <code>PageInfo</code>. Cursors are opaque and stable for the life of the query.</p>
+        </div>
+        <div class="card">
+          <div class="card-label">06 / Time</div>
+          <h3>ISO 8601, UTC</h3>
+          <p>All timestamps are RFC 3339 strings in UTC. Durations are integer seconds. The API never returns a local-time string.</p>
+        </div>
+      </div>
+
+      <h2>Authentication</h2>
+      <div class="cards two">
+        <div class="card">
+          <div class="card-label">Browser</div>
+          <h3><code>sessionCookie</code></h3>
+          <p>An HttpOnly, Secure, SameSite=Lax cookie named <code>zg_session</code>, minted after a successful passkey verification. The server-side session has a 15-minute idle timeout and an 8-hour absolute lifetime.</p>
+        </div>
+        <div class="card">
+          <div class="card-label">CLI / service</div>
+          <h3><code>bearerAuth</code></h3>
+          <p>A short-lived JWT signed by the identity service. The SSH helper and internal services use it. It carries the user, device, and role claims; it is never stored in a URL or a log.</p>
+        </div>
+      </div>
+      <p>Five operations are public: <code>GET /v1/health</code>, <code>POST /v1/auth/passkey/options</code>, <code>POST /v1/auth/passkey/verify</code>, <code>GET /v1/ssh/ca/public-key</code>, and <code>POST /v1/spa/knock</code>. Everything else requires a session or a bearer token and is subject to rate limits.</p>
+
+      <div class="table-wrap"><table class="compact"><caption>Table 2 &mdash; Operations by tag. The endpoint index below follows this order.</caption><thead><tr><th>Tag</th><th>Operations</th><th>What it covers</th></tr></thead><tbody><tr><td><a href="#tag-auth">Auth</a></td><td>3</td><td>Passkey enrollment, login, and browser sessions.</td></tr><tr><td><a href="#tag-devices">Devices</a></td><td>6</td><td>Device enrollment, posture, and revocation.</td></tr><tr><td><a href="#tag-authorization">Authorization</a></td><td>1</td><td>The central policy decision endpoint.</td></tr><tr><td><a href="#tag-sessions">Sessions</a></td><td>4</td><td>Live session state, heartbeats, and kill.</td></tr><tr><td><a href="#tag-ssh">SSH</a></td><td>4</td><td>Short-lived SSH certificate issuance and revocation.</td></tr><tr><td><a href="#tag-jit">JIT</a></td><td>6</td><td>Just-in-time access requests and approvals.</td></tr><tr><td><a href="#tag-policies">Policies</a></td><td>9</td><td>Policy authoring, versioning, publishing, and what-if testing.</td></tr><tr><td><a href="#tag-risk">Risk</a></td><td>3</td><td>Trust scores, signals, and model metadata.</td></tr><tr><td><a href="#tag-audit">Audit</a></td><td>4</td><td>Hash-chained audit events, verification, and export.</td></tr><tr><td><a href="#tag-vault">Vault</a></td><td>8</td><td>SecureVault credentials and Shamir recovery.</td></tr><tr><td><a href="#tag-operations">Operations</a></td><td>3</td><td>Health, latency, and admin overview.</td></tr><tr><td><a href="#tag-attack-lab">Attack Lab</a></td><td>2</td><td>Scripted attack scenarios for the demo panel.</td></tr></tbody></table></div>
+
+      <h2>Endpoint index</h2>
+      <p>Operations are grouped by tag in the order declared by the spec. Each row links to its operation id; the full request and response schemas live in <code>openapi.yaml</code>.</p>
+      <p class="mini-note api-mobile-note">On narrow screens the auth and success columns are hidden to keep the path and summary readable. Both remain in the YAML and in the desktop table.</p>
+      <section class="api-group" id="tag-auth"><div class="api-group-head"><h2>Auth</h2><span class="count">3 operations</span></div><p class="api-group-desc">Passkey enrollment, login, and browser sessions.</p><div class="table-wrap"><table class="api-table"><thead><tr><th>Method</th><th>Path</th><th>Summary</th><th>Auth</th><th>Success</th></tr></thead><tbody><tr id="op-createPasskeyOptions"><td><span class="method post">post</span></td><td><span class="path">/v1/auth/passkey/options</span><span class="op-id">createPasskeyOptions</span></td><td>Create WebAuthn registration or authentication options</td><td><span class="auth">Public</span></td><td><span class="success">200 &middot; PasskeyOptionsResponse</span></td></tr><tr id="op-verifyPasskey"><td><span class="method post">post</span></td><td><span class="path">/v1/auth/passkey/verify</span><span class="op-id">verifyPasskey</span></td><td>Verify a WebAuthn assertion and create a browser session</td><td><span class="auth">Public</span></td><td><span class="success">200 &middot; PasskeyVerifyResponse</span></td></tr><tr id="op-logout"><td><span class="method delete">delete</span></td><td><span class="path">/v1/auth/session</span><span class="op-id">logout</span></td><td>Revoke the current browser session</td><td><span class="auth">Cookie / Bearer</span></td><td><span class="success">204 &middot; No content</span></td></tr></tbody></table></div></section><section class="api-group" id="tag-devices"><div class="api-group-head"><h2>Devices</h2><span class="count">6 operations</span></div><p class="api-group-desc">Device enrollment, posture, and revocation.</p><div class="table-wrap"><table class="api-table"><thead><tr><th>Method</th><th>Path</th><th>Summary</th><th>Auth</th><th>Success</th></tr></thead><tbody><tr id="op-listDevices"><td><span class="method get">get</span></td><td><span class="path">/v1/devices</span><span class="op-id">listDevices</span></td><td>List devices visible to the caller</td><td><span class="auth">Cookie / Bearer</span></td><td><span class="success">200 &middot; DevicePage</span></td></tr><tr id="op-enrollDevice"><td><span class="method post">post</span></td><td><span class="path">/v1/devices</span><span class="op-id">enrollDevice</span></td><td>Enroll a device for a user</td><td><span class="auth">Cookie / Bearer</span></td><td><span class="success">201 &middot; Device</span></td></tr><tr id="op-getDevice"><td><span class="method get">get</span></td><td><span class="path">/v1/devices/{deviceId}</span><span class="op-id">getDevice</span></td><td>Get one device</td><td><span class="auth">Cookie / Bearer</span></td><td><span class="success">200 &middot; Device</span></td></tr><tr id="op-updateDevice"><td><span class="method patch">patch</span></td><td><span class="path">/v1/devices/{deviceId}</span><span class="op-id">updateDevice</span></td><td>Update device metadata</td><td><span class="auth">Cookie / Bearer</span></td><td><span class="success">200 &middot; Device</span></td></tr><tr id="op-revokeDevice"><td><span class="method delete">delete</span></td><td><span class="path">/v1/devices/{deviceId}</span><span class="op-id">revokeDevice</span></td><td>Revoke a device and kill its live sessions</td><td><span class="auth">Cookie / Bearer</span></td><td><span class="success">202 &middot; RevocationResult</span></td></tr><tr id="op-reportPosture"><td><span class="method post">post</span></td><td><span class="path">/v1/devices/{deviceId}/posture</span><span class="op-id">reportPosture</span></td><td>Submit a signed posture report</td><td><span class="auth">Cookie / Bearer</span></td><td><span class="success">202 &middot; PostureResult</span></td></tr></tbody></table></div></section><section class="api-group" id="tag-authorization"><div class="api-group-head"><h2>Authorization</h2><span class="count">1 operations</span></div><p class="api-group-desc">The central policy decision endpoint.</p><div class="table-wrap"><table class="api-table"><thead><tr><th>Method</th><th>Path</th><th>Summary</th><th>Auth</th><th>Success</th></tr></thead><tbody><tr id="op-authorize"><td><span class="method post">post</span></td><td><span class="path">/v1/authorize</span><span class="op-id">authorize</span></td><td>Decide whether a request may proceed</td><td><span class="auth">Cookie / Bearer</span></td><td><span class="success">200 &middot; AuthorizeResponse</span></td></tr></tbody></table></div></section><section class="api-group" id="tag-sessions"><div class="api-group-head"><h2>Sessions</h2><span class="count">4 operations</span></div><p class="api-group-desc">Live session state, heartbeats, and kill.</p><div class="table-wrap"><table class="api-table"><thead><tr><th>Method</th><th>Path</th><th>Summary</th><th>Auth</th><th>Success</th></tr></thead><tbody><tr id="op-listSessions"><td><span class="method get">get</span></td><td><span class="path">/v1/sessions</span><span class="op-id">listSessions</span></td><td>List sessions</td><td><span class="auth">Cookie / Bearer</span></td><td><span class="success">200 &middot; SessionPage</span></td></tr><tr id="op-getSession"><td><span class="method get">get</span></td><td><span class="path">/v1/sessions/{sessionId}</span><span class="op-id">getSession</span></td><td>Get one session</td><td><span class="auth">Cookie / Bearer</span></td><td><span class="success">200 &middot; Session</span></td></tr><tr id="op-heartbeat"><td><span class="method post">post</span></td><td><span class="path">/v1/sessions/{sessionId}/heartbeat</span><span class="op-id">heartbeat</span></td><td>Report session activity and context</td><td><span class="auth">Cookie / Bearer</span></td><td><span class="success">200 &middot; HeartbeatResponse</span></td></tr><tr id="op-killSession"><td><span class="method post">post</span></td><td><span class="path">/v1/sessions/{sessionId}/kill</span><span class="op-id">killSession</span></td><td>Kill a live session at every enforcement point</td><td><span class="auth">Cookie / Bearer</span></td><td><span class="success">202 &middot; KillResult</span></td></tr></tbody></table></div></section><section class="api-group" id="tag-ssh"><div class="api-group-head"><h2>SSH</h2><span class="count">4 operations</span></div><p class="api-group-desc">Short-lived SSH certificate issuance and revocation.</p><div class="table-wrap"><table class="api-table"><thead><tr><th>Method</th><th>Path</th><th>Summary</th><th>Auth</th><th>Success</th></tr></thead><tbody><tr id="op-issueSshCertificate"><td><span class="method post">post</span></td><td><span class="path">/v1/ssh/certificates</span><span class="op-id">issueSshCertificate</span></td><td>Issue a short-lived SSH certificate</td><td><span class="auth">Cookie / Bearer</span></td><td><span class="success">201 &middot; SshCertificate</span></td></tr><tr id="op-revokeSshCertificate"><td><span class="method post">post</span></td><td><span class="path">/v1/ssh/certificates/{certificateId}/revoke</span><span class="op-id">revokeSshCertificate</span></td><td>Revoke a certificate and close its SSH connection</td><td><span class="auth">Cookie / Bearer</span></td><td><span class="success">202 &middot; RevocationResult</span></td></tr><tr id="op-getSshCaPublicKey"><td><span class="method get">get</span></td><td><span class="path">/v1/ssh/ca/public-key</span><span class="op-id">getSshCaPublicKey</span></td><td>Fetch the CA public key and revocation-list metadata</td><td><span class="auth">Public</span></td><td><span class="success">200 &middot; object</span></td></tr><tr id="op-spaKnock"><td><span class="method post">post</span></td><td><span class="path">/v1/spa/knock</span><span class="op-id">spaKnock</span></td><td>Open the SSH port for one source address briefly</td><td><span class="auth">Public</span></td><td><span class="success">200 &middot; SpaKnockResponse</span></td></tr></tbody></table></div></section><section class="api-group" id="tag-jit"><div class="api-group-head"><h2>JIT</h2><span class="count">6 operations</span></div><p class="api-group-desc">Just-in-time access requests and approvals.</p><div class="table-wrap"><table class="api-table"><thead><tr><th>Method</th><th>Path</th><th>Summary</th><th>Auth</th><th>Success</th></tr></thead><tbody><tr id="op-listJitRequests"><td><span class="method get">get</span></td><td><span class="path">/v1/jit/requests</span><span class="op-id">listJitRequests</span></td><td>List just-in-time requests</td><td><span class="auth">Cookie / Bearer</span></td><td><span class="success">200 &middot; JitPage</span></td></tr><tr id="op-createJitRequest"><td><span class="method post">post</span></td><td><span class="path">/v1/jit/requests</span><span class="op-id">createJitRequest</span></td><td>Request temporary access</td><td><span class="auth">Cookie / Bearer</span></td><td><span class="success">201 &middot; JitRequest</span></td></tr><tr id="op-getJitRequest"><td><span class="method get">get</span></td><td><span class="path">/v1/jit/requests/{requestId}</span><span class="op-id">getJitRequest</span></td><td>Get one JIT request</td><td><span class="auth">Cookie / Bearer</span></td><td><span class="success">200 &middot; JitRequest</span></td></tr><tr id="op-approveJitRequest"><td><span class="method post">post</span></td><td><span class="path">/v1/jit/requests/{requestId}/approve</span><span class="op-id">approveJitRequest</span></td><td>Approve a pending request</td><td><span class="auth">Cookie / Bearer</span></td><td><span class="success">200 &middot; JitRequest</span></td></tr><tr id="op-denyJitRequest"><td><span class="method post">post</span></td><td><span class="path">/v1/jit/requests/{requestId}/deny</span><span class="op-id">denyJitRequest</span></td><td>Deny a pending request</td><td><span class="auth">Cookie / Bearer</span></td><td><span class="success">200 &middot; JitRequest</span></td></tr><tr id="op-cancelJitRequest"><td><span class="method post">post</span></td><td><span class="path">/v1/jit/requests/{requestId}/cancel</span><span class="op-id">cancelJitRequest</span></td><td>Cancel a pending request as its requester</td><td><span class="auth">Cookie / Bearer</span></td><td><span class="success">200 &middot; JitRequest</span></td></tr></tbody></table></div></section><section class="api-group" id="tag-policies"><div class="api-group-head"><h2>Policies</h2><span class="count">9 operations</span></div><p class="api-group-desc">Policy authoring, versioning, publishing, and what-if testing.</p><div class="table-wrap"><table class="api-table"><thead><tr><th>Method</th><th>Path</th><th>Summary</th><th>Auth</th><th>Success</th></tr></thead><tbody><tr id="op-listPolicies"><td><span class="method get">get</span></td><td><span class="path">/v1/policies</span><span class="op-id">listPolicies</span></td><td>List policies</td><td><span class="auth">Cookie / Bearer</span></td><td><span class="success">200 &middot; PolicyPage</span></td></tr><tr id="op-createPolicy"><td><span class="method post">post</span></td><td><span class="path">/v1/policies</span><span class="op-id">createPolicy</span></td><td>Create a draft policy</td><td><span class="auth">Cookie / Bearer</span></td><td><span class="success">201 &middot; Policy</span></td></tr><tr id="op-getPolicy"><td><span class="method get">get</span></td><td><span class="path">/v1/policies/{policyId}</span><span class="op-id">getPolicy</span></td><td>Get one policy and its current version</td><td><span class="auth">Cookie / Bearer</span></td><td><span class="success">200 &middot; Policy</span></td></tr><tr id="op-updatePolicy"><td><span class="method put">put</span></td><td><span class="path">/v1/policies/{policyId}</span><span class="op-id">updatePolicy</span></td><td>Update a draft policy</td><td><span class="auth">Cookie / Bearer</span></td><td><span class="success">200 &middot; Policy</span></td></tr><tr id="op-archivePolicy"><td><span class="method delete">delete</span></td><td><span class="path">/v1/policies/{policyId}</span><span class="op-id">archivePolicy</span></td><td>Archive a policy that is not referenced by live sessions</td><td><span class="auth">Cookie / Bearer</span></td><td><span class="success">202 &middot; RevocationResult</span></td></tr><tr id="op-listPolicyVersions"><td><span class="method get">get</span></td><td><span class="path">/v1/policies/{policyId}/versions</span><span class="op-id">listPolicyVersions</span></td><td>List immutable policy versions</td><td><span class="auth">Cookie / Bearer</span></td><td><span class="success">200 &middot; object</span></td></tr><tr id="op-createPolicyVersion"><td><span class="method post">post</span></td><td><span class="path">/v1/policies/{policyId}/versions</span><span class="op-id">createPolicyVersion</span></td><td>Snapshot the draft as a new immutable version</td><td><span class="auth">Cookie / Bearer</span></td><td><span class="success">201 &middot; PolicyVersion</span></td></tr><tr id="op-publishPolicy"><td><span class="method post">post</span></td><td><span class="path">/v1/policies/{policyId}/publish</span><span class="op-id">publishPolicy</span></td><td>Publish a version atomically</td><td><span class="auth">Cookie / Bearer</span></td><td><span class="success">200 &middot; Policy</span></td></tr><tr id="op-whatIfPolicy"><td><span class="method post">post</span></td><td><span class="path">/v1/policies/what-if</span><span class="op-id">whatIfPolicy</span></td><td>Evaluate a draft against historical decisions without enforcing it</td><td><span class="auth">Cookie / Bearer</span></td><td><span class="success">200 &middot; PolicyWhatIfResponse</span></td></tr></tbody></table></div></section><section class="api-group" id="tag-risk"><div class="api-group-head"><h2>Risk</h2><span class="count">3 operations</span></div><p class="api-group-desc">Trust scores, signals, and model metadata.</p><div class="table-wrap"><table class="api-table"><thead><tr><th>Method</th><th>Path</th><th>Summary</th><th>Auth</th><th>Success</th></tr></thead><tbody><tr id="op-evaluateRisk"><td><span class="method post">post</span></td><td><span class="path">/v1/risk/evaluate</span><span class="op-id">evaluateRisk</span></td><td>Score a request without enforcing a decision</td><td><span class="auth">Cookie / Bearer</span></td><td><span class="success">200 &middot; RiskEvaluateResponse</span></td></tr><tr id="op-listRiskSignals"><td><span class="method get">get</span></td><td><span class="path">/v1/risk/signals</span><span class="op-id">listRiskSignals</span></td><td>List the published signal catalog</td><td><span class="auth">Cookie / Bearer</span></td><td><span class="success">200 &middot; object</span></td></tr><tr id="op-listRiskModels"><td><span class="method get">get</span></td><td><span class="path">/v1/risk/models</span><span class="op-id">listRiskModels</span></td><td>List model versions, status, and evaluation summary</td><td><span class="auth">Cookie / Bearer</span></td><td><span class="success">200 &middot; object</span></td></tr></tbody></table></div></section><section class="api-group" id="tag-audit"><div class="api-group-head"><h2>Audit</h2><span class="count">4 operations</span></div><p class="api-group-desc">Hash-chained audit events, verification, and export.</p><div class="table-wrap"><table class="api-table"><thead><tr><th>Method</th><th>Path</th><th>Summary</th><th>Auth</th><th>Success</th></tr></thead><tbody><tr id="op-listAuditEvents"><td><span class="method get">get</span></td><td><span class="path">/v1/audit/events</span><span class="op-id">listAuditEvents</span></td><td>List audit events in sequence order</td><td><span class="auth">Cookie / Bearer</span></td><td><span class="success">200 &middot; AuditPage</span></td></tr><tr id="op-getAuditEvent"><td><span class="method get">get</span></td><td><span class="path">/v1/audit/events/{seq}</span><span class="op-id">getAuditEvent</span></td><td>Get one audit event by sequence number</td><td><span class="auth">Cookie / Bearer</span></td><td><span class="success">200 &middot; AuditEvent</span></td></tr><tr id="op-verifyAuditChain"><td><span class="method post">post</span></td><td><span class="path">/v1/audit/verify</span><span class="op-id">verifyAuditChain</span></td><td>Verify the hash chain over a sequence range</td><td><span class="auth">Cookie / Bearer</span></td><td><span class="success">200 &middot; AuditVerifyResponse</span></td></tr><tr id="op-exportAudit"><td><span class="method post">post</span></td><td><span class="path">/v1/audit/export</span><span class="op-id">exportAudit</span></td><td>Export a verified JSONL range</td><td><span class="auth">Cookie / Bearer</span></td><td><span class="success">200 &middot; No content</span></td></tr></tbody></table></div></section><section class="api-group" id="tag-vault"><div class="api-group-head"><h2>Vault</h2><span class="count">8 operations</span></div><p class="api-group-desc">SecureVault credentials and Shamir recovery.</p><div class="table-wrap"><table class="api-table"><thead><tr><th>Method</th><th>Path</th><th>Summary</th><th>Auth</th><th>Success</th></tr></thead><tbody><tr id="op-listVaultItems"><td><span class="method get">get</span></td><td><span class="path">/v1/vault/items</span><span class="op-id">listVaultItems</span></td><td>List vault items visible to the caller</td><td><span class="auth">Cookie / Bearer</span></td><td><span class="success">200 &middot; VaultPage</span></td></tr><tr id="op-createVaultItem"><td><span class="method post">post</span></td><td><span class="path">/v1/vault/items</span><span class="op-id">createVaultItem</span></td><td>Create an encrypted vault item</td><td><span class="auth">Cookie / Bearer</span></td><td><span class="success">201 &middot; VaultItem</span></td></tr><tr id="op-getVaultItem"><td><span class="method get">get</span></td><td><span class="path">/v1/vault/items/{itemId}</span><span class="op-id">getVaultItem</span></td><td>Read an item after a policy check</td><td><span class="auth">Cookie / Bearer</span></td><td><span class="success">200 &middot; VaultItemSecret</span></td></tr><tr id="op-updateVaultItem"><td><span class="method patch">patch</span></td><td><span class="path">/v1/vault/items/{itemId}</span><span class="op-id">updateVaultItem</span></td><td>Update item metadata or rotate its secret</td><td><span class="auth">Cookie / Bearer</span></td><td><span class="success">200 &middot; VaultItem</span></td></tr><tr id="op-deleteVaultItem"><td><span class="method delete">delete</span></td><td><span class="path">/v1/vault/items/{itemId}</span><span class="op-id">deleteVaultItem</span></td><td>Delete an item and its shares</td><td><span class="auth">Cookie / Bearer</span></td><td><span class="success">204 &middot; No content</span></td></tr><tr id="op-shareVaultItem"><td><span class="method post">post</span></td><td><span class="path">/v1/vault/items/{itemId}/share</span><span class="op-id">shareVaultItem</span></td><td>Share an item with a teammate until an expiry</td><td><span class="auth">Cookie / Bearer</span></td><td><span class="success">201 &middot; VaultShare</span></td></tr><tr id="op-createRecoveryShares"><td><span class="method post">post</span></td><td><span class="path">/v1/vault/recovery/shares</span><span class="op-id">createRecoveryShares</span></td><td>Split a vault secret into Shamir shares</td><td><span class="auth">Cookie / Bearer</span></td><td><span class="success">201 &middot; RecoveryShareSet</span></td></tr><tr id="op-rebuildVaultSecret"><td><span class="method post">post</span></td><td><span class="path">/v1/vault/recovery/rebuild</span><span class="op-id">rebuildVaultSecret</span></td><td>Rebuild a secret from k-of-n shares</td><td><span class="auth">Cookie / Bearer</span></td><td><span class="success">200 &middot; RecoveryRebuildResponse</span></td></tr></tbody></table></div></section><section class="api-group" id="tag-operations"><div class="api-group-head"><h2>Operations</h2><span class="count">3 operations</span></div><p class="api-group-desc">Health, latency, and admin overview.</p><div class="table-wrap"><table class="api-table"><thead><tr><th>Method</th><th>Path</th><th>Summary</th><th>Auth</th><th>Success</th></tr></thead><tbody><tr id="op-health"><td><span class="method get">get</span></td><td><span class="path">/v1/health</span><span class="op-id">health</span></td><td>Liveness and readiness</td><td><span class="auth">Public</span></td><td><span class="success">200 &middot; object</span></td></tr><tr id="op-getLatency"><td><span class="method get">get</span></td><td><span class="path">/v1/operations/latency</span><span class="op-id">getLatency</span></td><td>Live per-check latency snapshot</td><td><span class="auth">Cookie / Bearer</span></td><td><span class="success">200 &middot; LatencySnapshot</span></td></tr><tr id="op-getAdminOverview"><td><span class="method get">get</span></td><td><span class="path">/v1/operations/overview</span><span class="op-id">getAdminOverview</span></td><td>Counts for the admin dashboard</td><td><span class="auth">Cookie / Bearer</span></td><td><span class="success">200 &middot; AdminOverview</span></td></tr></tbody></table></div></section><section class="api-group" id="tag-attack-lab"><div class="api-group-head"><h2>Attack Lab</h2><span class="count">2 operations</span></div><p class="api-group-desc">Scripted attack scenarios for the demo panel.</p><div class="table-wrap"><table class="api-table"><thead><tr><th>Method</th><th>Path</th><th>Summary</th><th>Auth</th><th>Success</th></tr></thead><tbody><tr id="op-listAttackScenarios"><td><span class="method get">get</span></td><td><span class="path">/v1/attack/scenarios</span><span class="op-id">listAttackScenarios</span></td><td>List scripted attack scenarios</td><td><span class="auth">Cookie / Bearer</span></td><td><span class="success">200 &middot; object</span></td></tr><tr id="op-runAttackScenario"><td><span class="method post">post</span></td><td><span class="path">/v1/attack/scenarios/{scenarioId}/run</span><span class="op-id">runAttackScenario</span></td><td>Run a scripted scenario and return the blocked decision</td><td><span class="auth">Cookie / Bearer</span></td><td><span class="success">202 &middot; AttackRunResponse</span></td></tr></tbody></table></div></section>
+
+      <h2>Error model</h2>
+      <p>The error envelope is the same for validation, authentication, policy, and rate limiting. A client can branch on <code>error.code</code> without parsing prose, and a support engineer can correlate the request with the audit chain through <code>correlation_id</code>.</p>
+      <div class="table-wrap"><table class="compact"><caption>Table 3 &mdash; The shared error surface. Every error uses the same Problem envelope.</caption><thead><tr><th>Status</th><th>Shared response</th><th>When</th></tr></thead><tbody><tr><td>400</td><td>&mdash;</td><td>Malformed JSON, missing field, or invalid enum.</td></tr><tr><td>401</td><td><code>Unauthorized</code></td><td>No session cookie, expired bearer, or invalid assertion.</td></tr><tr><td>403</td><td><code>Forbidden</code></td><td>Authenticated but not allowed; includes self-approval and hard gates.</td></tr><tr><td>404</td><td><code>NotFound</code></td><td>Unknown device, session, policy, request, or certificate.</td></tr><tr><td>409</td><td><code>Conflict</code></td><td>State transition refused, duplicate decision, or idempotency conflict.</td></tr><tr><td>422</td><td><code>UnprocessableEntity</code></td><td>Semantically valid but rejected by policy or validation.</td></tr><tr><td>429</td><td><code>TooManyRequests</code></td><td>Rate limit; includes <code>retry_after_seconds</code>.</td></tr><tr><td>5XX</td><td>&mdash;</td><td>Unexpected server failure; fail closed and correlate with the request id.</td></tr></tbody></table></div>
+      <pre><code class="language-json">{
+  &quot;error&quot;: {
+    &quot;code&quot;: &quot;SELF_APPROVAL&quot;,
+    &quot;message&quot;: &quot;The requester cannot approve their own request.&quot;,
+    &quot;correlation_id&quot;: &quot;req_9b3e2a&quot;,
+    &quot;details&quot;: {&quot;request_id&quot;: &quot;jit_01J8ZB&quot;}
+  }
+}</code></pre>
+
+      <h2>Schema lexicon</h2>
+      <p>The contract defines 76 schemas. The names are stable; a rename is a breaking change. The most important are <code>AuthorizeRequest</code>, <code>AuthorizeResponse</code>, <code>Decision</code>, <code>Band</code>, <code>Obligation</code>, <code>Session</code>, <code>KillResult</code>, <code>SshCertificate</code>, <code>JitRequest</code>, <code>Policy</code>, <code>AuditEvent</code>, and <code>Problem</code>.</p>
+      <div class="schema-grid"><span class="schema-chip">AdminOverview</span><span class="schema-chip">ApprovalTicket</span><span class="schema-chip">AttackRunRequest</span><span class="schema-chip">AttackRunResponse</span><span class="schema-chip">AttackScenario</span><span class="schema-chip">AuditEvent</span><span class="schema-chip">AuditExportRequest</span><span class="schema-chip">AuditPage</span><span class="schema-chip">AuditVerifyRequest</span><span class="schema-chip">AuditVerifyResponse</span><span class="schema-chip">AuthorizeRequest</span><span class="schema-chip">AuthorizeResponse</span><span class="schema-chip">Band</span><span class="schema-chip">Decision</span><span class="schema-chip">Device</span><span class="schema-chip">DeviceContext</span><span class="schema-chip">DeviceCreate</span><span class="schema-chip">DevicePage</span><span class="schema-chip">DeviceState</span><span class="schema-chip">DeviceUpdate</span><span class="schema-chip">HeartbeatRequest</span><span class="schema-chip">HeartbeatResponse</span><span class="schema-chip">JitCreate</span><span class="schema-chip">JitDecision</span><span class="schema-chip">JitPage</span><span class="schema-chip">JitRequest</span><span class="schema-chip">JitState</span><span class="schema-chip">KillRequest</span><span class="schema-chip">KillResult</span><span class="schema-chip">LatencySnapshot</span><span class="schema-chip">Obligation</span><span class="schema-chip">PageInfo</span><span class="schema-chip">PasskeyOptionsRequest</span><span class="schema-chip">PasskeyOptionsResponse</span><span class="schema-chip">PasskeyVerifyRequest</span><span class="schema-chip">PasskeyVerifyResponse</span><span class="schema-chip">Policy</span><span class="schema-chip">PolicyCreate</span><span class="schema-chip">PolicyEffect</span><span class="schema-chip">PolicyPage</span><span class="schema-chip">PolicyUpdate</span><span class="schema-chip">PolicyVersion</span><span class="schema-chip">PolicyWhatIfRequest</span><span class="schema-chip">PolicyWhatIfResponse</span><span class="schema-chip">PostureReport</span><span class="schema-chip">PostureResult</span><span class="schema-chip">Problem</span><span class="schema-chip">RecoveryRebuildRequest</span><span class="schema-chip">RecoveryRebuildResponse</span><span class="schema-chip">RecoveryShareRequest</span><span class="schema-chip">RecoveryShareSet</span><span class="schema-chip">RequestContext</span><span class="schema-chip">ResourceContext</span><span class="schema-chip">RevocationResult</span><span class="schema-chip">RiskEvaluateResponse</span><span class="schema-chip">RiskModel</span><span class="schema-chip">RiskSignalDefinition</span><span class="schema-chip">Session</span><span class="schema-chip">SessionGrant</span><span class="schema-chip">SessionPage</span><span class="schema-chip">SessionState</span><span class="schema-chip">SpaKnockRequest</span><span class="schema-chip">SpaKnockResponse</span><span class="schema-chip">SshCertificate</span><span class="schema-chip">SshCertificateRequest</span><span class="schema-chip">SshRevokeRequest</span><span class="schema-chip">StepUpChallenge</span><span class="schema-chip">Subject</span><span class="schema-chip">TrustSignal</span><span class="schema-chip">User</span><span class="schema-chip">VaultItem</span><span class="schema-chip">VaultItemCreate</span><span class="schema-chip">VaultItemSecret</span><span class="schema-chip">VaultPage</span><span class="schema-chip">VaultShare</span><span class="schema-chip">VaultShareRequest</span></div>
+
+      <h2>Validation</h2>
+      <p>The spec is linted with <code>@redocly/cli</code> using the recommended ruleset and checked by a local resolver that walks every internal <code>$ref</code>. The build fails on a missing reference, a duplicate operation id, or an undocumented 4XX on an operation that requires authentication.</p>
+
+      <div class="callout"><span class="k">Scope of the contract</span><p>The API covers web apps and SSH servers only. There is no Kubernetes, database, email, SWG, CASB, DLP, or multi-tenancy surface. Vault operations are included because SecureVault is core; they are a separate encrypted store, not part of the access-control schema.</p></div>
+
+      <div class="link-row"><a href="openapi.yaml">Download openapi.yaml &rarr;</a><a href="requirements.html">Requirements &rarr;</a><a href="architecture.html">Architecture &rarr;</a><a href="risk-scoring.html">Risk report &rarr;</a></div>
+    </div>
+  </div>
+  <nav class="page-nav" aria-label="Previous and next pages"><a href="requirements.html"><span class="dir">Previous</span><span class="name">Requirements</span></a><a class="next" href="index.html"><span class="dir">Next</span><span class="name">Back to the atlas</span></a></nav>
+</div>
+
+</main>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div>ZeroGate design dossier &middot; v0.9 &middot; October 2026<br>
+      NIST SP 800-207 access broker &middot; single-tenant lab scope</div>
+    <div>Diagram system adapted from <a href="https://github.com/cathrynlavery/diagram-design">cathrynlavery/diagram-design</a> (MIT).<br>
+      <a href="../README.md">README</a> &middot; <a href="openapi.yaml">openapi.yaml</a> &middot;
+      <a href="risk-scoring-report.md">risk report</a> &middot;
+      <a href="functional-requirements.md">requirements</a></div>
+  </div>
+</footer>
+</body>
+</html>

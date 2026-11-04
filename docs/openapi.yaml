@@ -1,0 +1,2812 @@
+openapi: 3.1.0
+info:
+  title: ZeroGate Access Broker API
+  version: 0.9.0
+  summary: Identity, device posture, authorization, sessions, SSH certificates, JIT approvals, policy, risk, audit, and vault.
+  description: >-
+    ZeroGate is a single-tenant zero-trust access broker for web applications and
+    SSH servers. Every request is checked against the user's passkey identity,
+    device posture, a live trust score, and the published policy set. The central
+    decision endpoint is `POST /v1/authorize`; enforcement points call it or
+    validate a short-lived session decision. Decisions are explainable and every
+    lifecycle event is appended to a hash-chained audit log.
+  contact:
+    name: ZeroGate project
+    url: https://github.com/zerogate
+  license:
+    name: MIT
+servers:
+  - url: https://api.zerogate.lab
+    description: Lab deployment
+  - url: http://localhost:8080
+    description: Local development
+tags:
+  - name: Auth
+    description: Passkey enrollment, login, and browser sessions.
+  - name: Devices
+    description: Device enrollment, posture, and revocation.
+  - name: Authorization
+    description: The central policy decision endpoint.
+  - name: Sessions
+    description: Live session state, heartbeats, and kill.
+  - name: SSH
+    description: Short-lived SSH certificate issuance and revocation.
+  - name: JIT
+    description: Just-in-time access requests and approvals.
+  - name: Policies
+    description: Policy authoring, versioning, publishing, and what-if testing.
+  - name: Risk
+    description: Trust scores, signals, and model metadata.
+  - name: Audit
+    description: Hash-chained audit events, verification, and export.
+  - name: Vault
+    description: SecureVault credentials and Shamir recovery.
+  - name: Operations
+    description: Health, latency, and admin overview.
+  - name: Attack Lab
+    description: Scripted attack scenarios for the demo panel.
+security:
+  - sessionCookie: []
+  - bearerAuth: []
+paths:
+  /v1/health:
+    get:
+      tags: [Operations]
+      operationId: health
+      summary: Liveness and readiness
+      security: []
+      responses:
+        '200':
+          description: Service health
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status, version, time]
+                properties:
+                  status:
+                    type: string
+                    enum: [ok, degraded, down]
+                  version:
+                    type: string
+                    example: 0.9.0
+                  components:
+                    type: object
+                    additionalProperties:
+                      type: string
+                  time:
+                    type: string
+                    format: date-time
+
+  /v1/auth/passkey/options:
+    post:
+      tags: [Auth]
+      operationId: createPasskeyOptions
+      summary: Create WebAuthn registration or authentication options
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasskeyOptionsRequest'
+      responses:
+        '200':
+          description: PublicKeyCredentialCreationOptions or PublicKeyCredentialRequestOptions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PasskeyOptionsResponse'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+
+  /v1/auth/passkey/verify:
+    post:
+      tags: [Auth]
+      operationId: verifyPasskey
+      summary: Verify a WebAuthn assertion and create a browser session
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasskeyVerifyRequest'
+      responses:
+        '200':
+          description: Verified identity and session
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PasskeyVerifyResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+
+  /v1/auth/session:
+    delete:
+      tags: [Auth]
+      operationId: logout
+      summary: Revoke the current browser session
+      responses:
+        '204':
+          description: Session revoked
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /v1/devices:
+    get:
+      tags: [Devices]
+      operationId: listDevices
+      summary: List devices visible to the caller
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+        - name: state
+          in: query
+          description: Filter by device state
+          schema:
+            $ref: '#/components/schemas/DeviceState'
+      responses:
+        '200':
+          description: Device page
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DevicePage'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+    post:
+      tags: [Devices]
+      operationId: enrollDevice
+      summary: Enroll a device for a user
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeviceCreate'
+      responses:
+        '201':
+          description: Device enrolled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Device'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+
+  /v1/devices/{deviceId}:
+    parameters:
+      - $ref: '#/components/parameters/DeviceId'
+    get:
+      tags: [Devices]
+      operationId: getDevice
+      summary: Get one device
+      responses:
+        '200':
+          description: Device
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Device'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      tags: [Devices]
+      operationId: updateDevice
+      summary: Update device metadata
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeviceUpdate'
+      responses:
+        '200':
+          description: Updated device
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Device'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+    delete:
+      tags: [Devices]
+      operationId: revokeDevice
+      summary: Revoke a device and kill its live sessions
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '202':
+          description: Revocation accepted; sessions will be killed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RevocationResult'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /v1/devices/{deviceId}/posture:
+    parameters:
+      - $ref: '#/components/parameters/DeviceId'
+    post:
+      tags: [Devices]
+      operationId: reportPosture
+      summary: Submit a signed posture report
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PostureReport'
+      responses:
+        '202':
+          description: Posture accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostureResult'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+
+  /v1/authorize:
+    post:
+      tags: [Authorization]
+      operationId: authorize
+      summary: Decide whether a request may proceed
+      description: >-
+        Evaluates hard gates, the trust score, the matching policy, and the trust
+        band. A deny or an explicit policy deny overrides an allow. The response
+        always includes explainable signals and an audit correlation ID.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthorizeRequest'
+      responses:
+        '200':
+          description: Decision
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthorizeResponse'
+              examples:
+                allow:
+                  summary: Normal login
+                  value:
+                    decision: ALLOW
+                    band: ALLOW
+                    trust_score: 92
+                    reason_codes: []
+                    signals: []
+                    ml_adjustment: 0
+                    policy_id: pol_default_web
+                    policy_version: 4
+                    obligations:
+                      - type: limit_ttl
+                        seconds: 1800
+                    session:
+                      id: ses_01J8Z8
+                      state: ACTIVE
+                      trust_score: 92
+                      started_at: '2026-10-28T10:00:00Z'
+                      expires_at: '2026-10-28T10:30:00Z'
+                      resource_id: res_wiki
+                      policy_id: pol_default_web
+                    audit_id: evt_01J8Z9K4
+                    decided_at: '2026-10-28T10:00:00Z'
+                    correlation_id: req_5f2b1c
+                approval:
+                  summary: JIT approval required
+                  value:
+                    decision: APPROVAL_REQUIRED
+                    band: APPROVAL
+                    trust_score: 50
+                    reason_codes:
+                      - SIGNAL_FRESH_CREDENTIAL
+                      - SIGNAL_NEW_ASN
+                      - SIGNAL_OFF_HOURS
+                    signals:
+                      - code: ID-03
+                        category: identity
+                        points: -10
+                        source: identity
+                      - code: NW-03
+                        category: network
+                        points: -8
+                        source: geoip
+                      - code: BH-05
+                        category: behaviour
+                        points: -6
+                        source: context
+                    ml_adjustment: -4
+                    policy_id: pol_prod_change
+                    policy_version: 2
+                    obligations:
+                      - type: require_approval
+                        seconds: 900
+                    approval:
+                      request_id: jit_01J8Z8
+                      state: PENDING
+                      queue: change-approvers
+                      sla_expires_at: '2026-10-28T10:15:00Z'
+                    audit_id: evt_01J8Z9K5
+                    decided_at: '2026-10-28T10:00:00Z'
+                    correlation_id: req_5f2b1d
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+
+  /v1/sessions:
+    get:
+      tags: [Sessions]
+      operationId: listSessions
+      summary: List sessions
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+        - name: state
+          in: query
+          schema:
+            $ref: '#/components/schemas/SessionState'
+        - name: live
+          in: query
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Session page
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionPage'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /v1/sessions/{sessionId}:
+    parameters:
+      - $ref: '#/components/parameters/SessionId'
+    get:
+      tags: [Sessions]
+      operationId: getSession
+      summary: Get one session
+      responses:
+        '200':
+          description: Session
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Session'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /v1/sessions/{sessionId}/heartbeat:
+    parameters:
+      - $ref: '#/components/parameters/SessionId'
+    post:
+      tags: [Sessions]
+      operationId: heartbeat
+      summary: Report session activity and context
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HeartbeatRequest'
+      responses:
+        '200':
+          description: Updated session state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HeartbeatResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /v1/sessions/{sessionId}/kill:
+    parameters:
+      - $ref: '#/components/parameters/SessionId'
+    post:
+      tags: [Sessions]
+      operationId: killSession
+      summary: Kill a live session at every enforcement point
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/KillRequest'
+      responses:
+        '202':
+          description: Kill accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KillResult'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /v1/ssh/certificates:
+    post:
+      tags: [SSH]
+      operationId: issueSshCertificate
+      summary: Issue a short-lived SSH certificate
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SshCertificateRequest'
+      responses:
+        '201':
+          description: Certificate issued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SshCertificate'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+
+  /v1/ssh/certificates/{certificateId}/revoke:
+    parameters:
+      - $ref: '#/components/parameters/CertificateId'
+    post:
+      tags: [SSH]
+      operationId: revokeSshCertificate
+      summary: Revoke a certificate and close its SSH connection
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SshRevokeRequest'
+      responses:
+        '202':
+          description: Revocation accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RevocationResult'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /v1/ssh/ca/public-key:
+    get:
+      tags: [SSH]
+      operationId: getSshCaPublicKey
+      summary: Fetch the CA public key and revocation-list metadata
+      security: []
+      responses:
+        '200':
+          description: CA public key
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ca_public_key, key_id, valid_until]
+                properties:
+                  ca_public_key:
+                    type: string
+                    description: OpenSSH public key line
+                  key_id:
+                    type: string
+                  valid_until:
+                    type: string
+                    format: date-time
+                  krl_url:
+                    type: string
+                    format: uri
+
+  /v1/jit/requests:
+    get:
+      tags: [JIT]
+      operationId: listJitRequests
+      summary: List just-in-time requests
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+        - name: state
+          in: query
+          schema:
+            $ref: '#/components/schemas/JitState'
+      responses:
+        '200':
+          description: JIT request page
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JitPage'
+    post:
+      tags: [JIT]
+      operationId: createJitRequest
+      summary: Request temporary access
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JitCreate'
+      responses:
+        '201':
+          description: Request created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JitRequest'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+
+  /v1/jit/requests/{requestId}:
+    parameters:
+      - $ref: '#/components/parameters/RequestId'
+    get:
+      tags: [JIT]
+      operationId: getJitRequest
+      summary: Get one JIT request
+      responses:
+        '200':
+          description: JIT request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JitRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /v1/jit/requests/{requestId}/approve:
+    parameters:
+      - $ref: '#/components/parameters/RequestId'
+    post:
+      tags: [JIT]
+      operationId: approveJitRequest
+      summary: Approve a pending request
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JitDecision'
+      responses:
+        '200':
+          description: Approved grant
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JitRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /v1/jit/requests/{requestId}/deny:
+    parameters:
+      - $ref: '#/components/parameters/RequestId'
+    post:
+      tags: [JIT]
+      operationId: denyJitRequest
+      summary: Deny a pending request
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JitDecision'
+      responses:
+        '200':
+          description: Denied request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JitRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /v1/jit/requests/{requestId}/cancel:
+    parameters:
+      - $ref: '#/components/parameters/RequestId'
+    post:
+      tags: [JIT]
+      operationId: cancelJitRequest
+      summary: Cancel a pending request as its requester
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '200':
+          description: Cancelled request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JitRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /v1/policies:
+    get:
+      tags: [Policies]
+      operationId: listPolicies
+      summary: List policies
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [draft, published, archived]
+      responses:
+        '200':
+          description: Policy page
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PolicyPage'
+    post:
+      tags: [Policies]
+      operationId: createPolicy
+      summary: Create a draft policy
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PolicyCreate'
+      responses:
+        '201':
+          description: Draft policy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Policy'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+
+  /v1/policies/{policyId}:
+    parameters:
+      - $ref: '#/components/parameters/PolicyId'
+    get:
+      tags: [Policies]
+      operationId: getPolicy
+      summary: Get one policy and its current version
+      responses:
+        '200':
+          description: Policy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Policy'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags: [Policies]
+      operationId: updatePolicy
+      summary: Update a draft policy
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PolicyUpdate'
+      responses:
+        '200':
+          description: Updated draft
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Policy'
+        '409':
+          $ref: '#/components/responses/Conflict'
+    delete:
+      tags: [Policies]
+      operationId: archivePolicy
+      summary: Archive a policy that is not referenced by live sessions
+      responses:
+        '202':
+          description: Archive accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RevocationResult'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /v1/policies/{policyId}/versions:
+    parameters:
+      - $ref: '#/components/parameters/PolicyId'
+    get:
+      tags: [Policies]
+      operationId: listPolicyVersions
+      summary: List immutable policy versions
+      responses:
+        '200':
+          description: Versions
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PolicyVersion'
+    post:
+      tags: [Policies]
+      operationId: createPolicyVersion
+      summary: Snapshot the draft as a new immutable version
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [changelog]
+              properties:
+                changelog:
+                  type: string
+                  minLength: 3
+      responses:
+        '201':
+          description: New version
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PolicyVersion'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /v1/policies/{policyId}/publish:
+    parameters:
+      - $ref: '#/components/parameters/PolicyId'
+    post:
+      tags: [Policies]
+      operationId: publishPolicy
+      summary: Publish a version atomically
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [version]
+              properties:
+                version:
+                  type: integer
+                  minimum: 1
+      responses:
+        '200':
+          description: Published policy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Policy'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /v1/policies/what-if:
+    post:
+      tags: [Policies]
+      operationId: whatIfPolicy
+      summary: Evaluate a draft against historical decisions without enforcing it
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PolicyWhatIfRequest'
+      responses:
+        '200':
+          description: What-if result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PolicyWhatIfResponse'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+
+  /v1/risk/evaluate:
+    post:
+      tags: [Risk]
+      operationId: evaluateRisk
+      summary: Score a request without enforcing a decision
+      description: Internal endpoint used by the Policy Engine and the what-if tester.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthorizeRequest'
+      responses:
+        '200':
+          description: Score and explanation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RiskEvaluateResponse'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+
+  /v1/risk/signals:
+    get:
+      tags: [Risk]
+      operationId: listRiskSignals
+      summary: List the published signal catalog
+      responses:
+        '200':
+          description: Signal definitions
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/RiskSignalDefinition'
+
+  /v1/risk/models:
+    get:
+      tags: [Risk]
+      operationId: listRiskModels
+      summary: List model versions, status, and evaluation summary
+      responses:
+        '200':
+          description: Model registry
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/RiskModel'
+
+  /v1/audit/events:
+    get:
+      tags: [Audit]
+      operationId: listAuditEvents
+      summary: List audit events in sequence order
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+        - name: type
+          in: query
+          schema:
+            type: string
+        - name: session_id
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Audit page
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuditPage'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /v1/audit/events/{seq}:
+    parameters:
+      - $ref: '#/components/parameters/Seq'
+    get:
+      tags: [Audit]
+      operationId: getAuditEvent
+      summary: Get one audit event by sequence number
+      responses:
+        '200':
+          description: Audit event
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuditEvent'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /v1/audit/verify:
+    post:
+      tags: [Audit]
+      operationId: verifyAuditChain
+      summary: Verify the hash chain over a sequence range
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuditVerifyRequest'
+      responses:
+        '200':
+          description: Verification result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuditVerifyResponse'
+
+  /v1/audit/export:
+    post:
+      tags: [Audit]
+      operationId: exportAudit
+      summary: Export a verified JSONL range
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuditExportRequest'
+      responses:
+        '200':
+          description: JSONL export
+          content:
+            application/x-ndjson:
+              schema:
+                type: string
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /v1/vault/items:
+    get:
+      tags: [Vault]
+      operationId: listVaultItems
+      summary: List vault items visible to the caller
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200':
+          description: Vault item page
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VaultPage'
+    post:
+      tags: [Vault]
+      operationId: createVaultItem
+      summary: Create an encrypted vault item
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VaultItemCreate'
+      responses:
+        '201':
+          description: Created item metadata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VaultItem'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+
+  /v1/vault/items/{itemId}:
+    parameters:
+      - $ref: '#/components/parameters/ItemId'
+    get:
+      tags: [Vault]
+      operationId: getVaultItem
+      summary: Read an item after a policy check
+      responses:
+        '200':
+          description: Decrypted item
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VaultItemSecret'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      tags: [Vault]
+      operationId: updateVaultItem
+      summary: Update item metadata or rotate its secret
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VaultItemCreate'
+      responses:
+        '200':
+          description: Updated metadata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VaultItem'
+    delete:
+      tags: [Vault]
+      operationId: deleteVaultItem
+      summary: Delete an item and its shares
+      responses:
+        '204':
+          description: Deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /v1/vault/items/{itemId}/share:
+    parameters:
+      - $ref: '#/components/parameters/ItemId'
+    post:
+      tags: [Vault]
+      operationId: shareVaultItem
+      summary: Share an item with a teammate until an expiry
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VaultShareRequest'
+      responses:
+        '201':
+          description: Share created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VaultShare'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+
+  /v1/vault/recovery/shares:
+    post:
+      tags: [Vault]
+      operationId: createRecoveryShares
+      summary: Split a vault secret into Shamir shares
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecoveryShareRequest'
+      responses:
+        '201':
+          description: Share metadata (never the shares themselves)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecoveryShareSet'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+
+  /v1/vault/recovery/rebuild:
+    post:
+      tags: [Vault]
+      operationId: rebuildVaultSecret
+      summary: Rebuild a secret from k-of-n shares
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecoveryRebuildRequest'
+      responses:
+        '200':
+          description: Rebuild result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecoveryRebuildResponse'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+
+  /v1/spa/knock:
+    post:
+      tags: [SSH]
+      operationId: spaKnock
+      summary: Open the SSH port for one source address briefly
+      description: Stretch endpoint. The packet is signed and single-use.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SpaKnockRequest'
+      responses:
+        '200':
+          description: Port opened
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpaKnockResponse'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /v1/attack/scenarios:
+    get:
+      tags: [Attack Lab]
+      operationId: listAttackScenarios
+      summary: List scripted attack scenarios
+      responses:
+        '200':
+          description: Scenarios
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AttackScenario'
+
+  /v1/attack/scenarios/{scenarioId}/run:
+    parameters:
+      - $ref: '#/components/parameters/ScenarioId'
+    post:
+      tags: [Attack Lab]
+      operationId: runAttackScenario
+      summary: Run a scripted scenario and return the blocked decision
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AttackRunRequest'
+      responses:
+        '202':
+          description: Scenario result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AttackRunResponse'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /v1/operations/latency:
+    get:
+      tags: [Operations]
+      operationId: getLatency
+      summary: Live per-check latency snapshot
+      parameters:
+        - name: window
+          in: query
+          schema:
+            type: string
+            enum: [1m, 5m, 15m, 1h]
+            default: 5m
+      responses:
+        '200':
+          description: Latency snapshot
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LatencySnapshot'
+
+  /v1/operations/overview:
+    get:
+      tags: [Operations]
+      operationId: getAdminOverview
+      summary: Counts for the admin dashboard
+      responses:
+        '200':
+          description: Overview
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminOverview'
+
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: zg_session
+      description: HttpOnly browser session established by passkey login.
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Short-lived token for the CLI and internal services.
+
+  parameters:
+    Limit:
+      name: limit
+      in: query
+      description: Page size
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 25
+    Cursor:
+      name: cursor
+      in: query
+      description: Opaque cursor from the previous page
+      schema:
+        type: string
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      description: Required on mutations that can be retried
+      schema:
+        type: string
+        minLength: 8
+        maxLength: 128
+    DeviceId:
+      name: deviceId
+      in: path
+      required: true
+      schema:
+        type: string
+    SessionId:
+      name: sessionId
+      in: path
+      required: true
+      schema:
+        type: string
+    CertificateId:
+      name: certificateId
+      in: path
+      required: true
+      schema:
+        type: string
+    RequestId:
+      name: requestId
+      in: path
+      required: true
+      schema:
+        type: string
+    PolicyId:
+      name: policyId
+      in: path
+      required: true
+      schema:
+        type: string
+    Seq:
+      name: seq
+      in: path
+      required: true
+      schema:
+        type: integer
+        minimum: 1
+    ItemId:
+      name: itemId
+      in: path
+      required: true
+      schema:
+        type: string
+    ScenarioId:
+      name: scenarioId
+      in: path
+      required: true
+      schema:
+        type: string
+
+  responses:
+    Unauthorized:
+      description: Authentication is missing or invalid
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Forbidden:
+      description: The caller is authenticated but not allowed
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    NotFound:
+      description: The resource does not exist or is not visible
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Conflict:
+      description: The request conflicts with the current state
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    UnprocessableEntity:
+      description: Validation failed
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    TooManyRequests:
+      description: Rate limit exceeded
+      headers:
+        Retry-After:
+          description: Seconds until the next attempt
+          schema:
+            type: integer
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+
+  schemas:
+    Problem:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message, correlation_id]
+          properties:
+            code:
+              type: string
+              example: RATE_LIMITED
+            message:
+              type: string
+              example: Too many authorization attempts for this credential.
+            details:
+              type: object
+              additionalProperties: true
+            correlation_id:
+              type: string
+              example: req_5f2b1c
+            retry_after_seconds:
+              type: integer
+              minimum: 0
+
+    PageInfo:
+      type: object
+      required: [has_more]
+      properties:
+        next_cursor:
+          type: [string, 'null']
+        has_more:
+          type: boolean
+
+    Decision:
+      type: string
+      enum: [ALLOW, STEP_UP_REQUIRED, APPROVAL_REQUIRED, DENY, KILL_SESSION]
+
+    Band:
+      type: string
+      enum: [ALLOW, STEP_UP, APPROVAL, DENY]
+
+    SessionState:
+      type: string
+      enum: [ACTIVE, STEP_UP, SUSPENDED, KILLED, EXPIRED]
+
+    JitState:
+      type: string
+      enum: [REQUESTED, PENDING, APPROVED, DENIED, EXPIRED, CONSUMED]
+
+    DeviceState:
+      type: string
+      enum: [UNKNOWN, ENROLLED, COMPLIANT, NON_COMPLIANT, QUARANTINED, REVOKED]
+
+    PolicyEffect:
+      type: string
+      enum: [ALLOW, DENY, STEP_UP, APPROVAL]
+
+    User:
+      type: object
+      required: [id, email, role, status]
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+          enum: [employee, approver, admin, auditor]
+        status:
+          type: string
+          enum: [active, suspended, disabled]
+        created_at:
+          type: string
+          format: date-time
+
+    PasskeyOptionsRequest:
+      type: object
+      required: [purpose]
+      properties:
+        purpose:
+          type: string
+          enum: [registration, authentication]
+        user_id:
+          type: string
+          description: Required for registration; optional for authentication.
+        device_id:
+          type: string
+
+    PasskeyOptionsResponse:
+      type: object
+      required: [challenge_id, expires_at, public_key]
+      properties:
+        challenge_id:
+          type: string
+        expires_at:
+          type: string
+          format: date-time
+        public_key:
+          type: object
+          required: [challenge, rp_id, timeout_ms]
+          properties:
+            challenge:
+              type: string
+              description: Base64url-encoded 32-byte challenge
+            rp_id:
+              type: string
+            timeout_ms:
+              type: integer
+              example: 60000
+            user:
+              type: object
+              properties:
+                id:
+                  type: string
+                name:
+                  type: string
+                display_name:
+                  type: string
+            pub_key_cred_params:
+              type: array
+              items:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    example: public-key
+                  alg:
+                    type: integer
+                    example: -7
+            authenticator_selection:
+              type: object
+              properties:
+                resident_key:
+                  type: string
+                  enum: [discouraged, preferred, required]
+                user_verification:
+                  type: string
+                  enum: [discouraged, preferred, required]
+                authenticator_attachment:
+                  type: string
+                  enum: [platform, cross-platform]
+
+    PasskeyVerifyRequest:
+      type: object
+      required: [challenge_id, credential]
+      properties:
+        challenge_id:
+          type: string
+        device_id:
+          type: string
+        credential:
+          type: object
+          required: [id, raw_id, type, response]
+          properties:
+            id:
+              type: string
+            raw_id:
+              type: string
+            type:
+              type: string
+              enum: [public-key]
+            response:
+              type: object
+              required: [client_data_json, authenticator_data, signature]
+              properties:
+                client_data_json:
+                  type: string
+                authenticator_data:
+                  type: string
+                signature:
+                  type: string
+                user_handle:
+                  type: string
+
+    PasskeyVerifyResponse:
+      type: object
+      required: [user, session, audit_id]
+      properties:
+        user:
+          $ref: '#/components/schemas/User'
+        credential_id:
+          type: string
+        session:
+          $ref: '#/components/schemas/Session'
+        audit_id:
+          type: string
+        expires_at:
+          type: string
+          format: date-time
+
+    Device:
+      type: object
+      required: [id, user_id, hostname, state]
+      properties:
+        id:
+          type: string
+        user_id:
+          type: string
+        hostname:
+          type: string
+        os_version:
+          type: string
+        disk_encrypted:
+          type: boolean
+        is_rooted:
+          type: boolean
+        screen_lock:
+          type: boolean
+        compliant:
+          type: boolean
+        state:
+          $ref: '#/components/schemas/DeviceState'
+        last_seen_at:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+
+    DeviceCreate:
+      type: object
+      required: [user_id, hostname]
+      properties:
+        user_id:
+          type: string
+        hostname:
+          type: string
+          minLength: 1
+          maxLength: 253
+        os_version:
+          type: string
+        enrollment_token:
+          type: string
+          description: One-time token issued by an administrator.
+
+    DeviceUpdate:
+      type: object
+      properties:
+        hostname:
+          type: string
+        os_version:
+          type: string
+        notes:
+          type: string
+
+    PostureReport:
+      type: object
+      required: [disk_encrypted, is_rooted, os_version, reported_at, signature]
+      properties:
+        disk_encrypted:
+          type: boolean
+        is_rooted:
+          type: boolean
+        screen_lock:
+          type: boolean
+        os_version:
+          type: string
+        agent_version:
+          type: string
+        reported_at:
+          type: string
+          format: date-time
+        signature:
+          type: string
+          description: Detached signature over the canonical report.
+
+    PostureResult:
+      type: object
+      required: [device_id, state, accepted_at]
+      properties:
+        device_id:
+          type: string
+        state:
+          $ref: '#/components/schemas/DeviceState'
+        accepted_at:
+          type: string
+          format: date-time
+        score_impact:
+          type: integer
+
+    Subject:
+      type: object
+      required: [user_id]
+      properties:
+        user_id:
+          type: string
+        session_id:
+          type: string
+        roles:
+          type: array
+          items:
+            type: string
+
+    DeviceContext:
+      type: object
+      required: [device_id]
+      properties:
+        device_id:
+          type: string
+        posture_age_seconds:
+          type: integer
+        disk_encrypted:
+          type: boolean
+        is_rooted:
+          type: boolean
+        os_version:
+          type: string
+
+    ResourceContext:
+      type: object
+      required: [resource_id, kind]
+      properties:
+        resource_id:
+          type: string
+        kind:
+          type: string
+          enum: [web, ssh]
+        host:
+          type: string
+        sensitivity:
+          type: string
+          enum: [public, internal, restricted, production]
+
+    RequestContext:
+      type: object
+      properties:
+        ip:
+          type: string
+        country:
+          type: string
+          minLength: 2
+          maxLength: 2
+        asn:
+          type: integer
+        user_agent:
+          type: string
+        local_time:
+          type: string
+          format: date-time
+        request_id:
+          type: string
+
+    AuthorizeRequest:
+      type: object
+      required: [subject, device, resource, action, context]
+      properties:
+        subject:
+          $ref: '#/components/schemas/Subject'
+        device:
+          $ref: '#/components/schemas/DeviceContext'
+        resource:
+          $ref: '#/components/schemas/ResourceContext'
+        action:
+          type: string
+          example: read
+        context:
+          $ref: '#/components/schemas/RequestContext'
+        session_id:
+          type: string
+        requested_ttl_seconds:
+          type: integer
+          minimum: 60
+          maximum: 28800
+          default: 1800
+
+    TrustSignal:
+      type: object
+      required: [code, category, points, source]
+      properties:
+        code:
+          type: string
+          example: NW-03
+        category:
+          type: string
+          enum: [identity, device, network, behaviour, session]
+        points:
+          type: integer
+          example: -8
+        source:
+          type: string
+          example: geoip
+        detail:
+          type: string
+        observed_at:
+          type: string
+          format: date-time
+
+    Obligation:
+      type: object
+      required: [type]
+      properties:
+        type:
+          type: string
+          enum:
+            - reauth_within
+            - limit_ttl
+            - require_approval
+            - record_session
+            - notify_admin
+            - revoke_certificate
+            - terminate_session
+        seconds:
+          type: integer
+          minimum: 0
+        params:
+          type: object
+          additionalProperties: true
+
+    SessionGrant:
+      type: object
+      required: [id, state, trust_score, started_at, expires_at, resource_id, policy_id]
+      properties:
+        id:
+          type: string
+        state:
+          $ref: '#/components/schemas/SessionState'
+        trust_score:
+          type: integer
+          minimum: 0
+          maximum: 100
+        started_at:
+          type: string
+          format: date-time
+        expires_at:
+          type: string
+          format: date-time
+        resource_id:
+          type: string
+        policy_id:
+          type: string
+
+    StepUpChallenge:
+      type: object
+      required: [challenge_id, methods, expires_at]
+      properties:
+        challenge_id:
+          type: string
+        methods:
+          type: array
+          items:
+            type: string
+            enum: [passkey, approval]
+        reauth_url:
+          type: string
+          format: uri
+        expires_at:
+          type: string
+          format: date-time
+
+    ApprovalTicket:
+      type: object
+      required: [request_id, state, queue, sla_expires_at]
+      properties:
+        request_id:
+          type: string
+        state:
+          $ref: '#/components/schemas/JitState'
+        queue:
+          type: string
+        sla_expires_at:
+          type: string
+          format: date-time
+
+    AuthorizeResponse:
+      type: object
+      required:
+        - decision
+        - band
+        - trust_score
+        - reason_codes
+        - signals
+        - ml_adjustment
+        - obligations
+        - audit_id
+        - decided_at
+        - correlation_id
+      properties:
+        decision:
+          $ref: '#/components/schemas/Decision'
+        band:
+          $ref: '#/components/schemas/Band'
+        trust_score:
+          type: integer
+          minimum: 0
+          maximum: 100
+        reason_codes:
+          type: array
+          items:
+            type: string
+        signals:
+          type: array
+          items:
+            $ref: '#/components/schemas/TrustSignal'
+        ml_adjustment:
+          type: integer
+          minimum: -15
+          maximum: 0
+        model_version:
+          type: string
+        policy_id:
+          type: [string, 'null']
+        policy_version:
+          type: integer
+        obligations:
+          type: array
+          items:
+            $ref: '#/components/schemas/Obligation'
+        session:
+          $ref: '#/components/schemas/SessionGrant'
+        step_up:
+          $ref: '#/components/schemas/StepUpChallenge'
+        approval:
+          $ref: '#/components/schemas/ApprovalTicket'
+        audit_id:
+          type: string
+        decided_at:
+          type: string
+          format: date-time
+        expires_at:
+          type: string
+          format: date-time
+        correlation_id:
+          type: string
+
+    Session:
+      type: object
+      required: [id, user_id, state, trust_score, started_at, expires_at]
+      properties:
+        id:
+          type: string
+        user_id:
+          type: string
+        device_id:
+          type: string
+        resource_id:
+          type: string
+        request_id:
+          type: [string, 'null']
+        trust_score:
+          type: integer
+          minimum: 0
+          maximum: 100
+        band:
+          $ref: '#/components/schemas/Band'
+        state:
+          $ref: '#/components/schemas/SessionState'
+        started_at:
+          type: string
+          format: date-time
+        expires_at:
+          type: string
+          format: date-time
+        last_heartbeat_at:
+          type: string
+          format: date-time
+        policy_id:
+          type: string
+        policy_version:
+          type: integer
+        killed_at:
+          type: [string, 'null']
+          format: date-time
+        kill_reason:
+          type: [string, 'null']
+        audit_id:
+          type: string
+
+    HeartbeatRequest:
+      type: object
+      required: [observed_at]
+      properties:
+        observed_at:
+          type: string
+          format: date-time
+        trust_score:
+          type: integer
+          minimum: 0
+          maximum: 100
+        posture:
+          $ref: '#/components/schemas/PostureReport'
+        activity:
+          type: object
+          properties:
+            requests_per_minute:
+              type: number
+            bytes_out:
+              type: integer
+            unique_resources:
+              type: integer
+            command_count:
+              type: integer
+
+    HeartbeatResponse:
+      type: object
+      required: [session, decision]
+      properties:
+        session:
+          $ref: '#/components/schemas/Session'
+        decision:
+          $ref: '#/components/schemas/Decision'
+        reason_codes:
+          type: array
+          items:
+            type: string
+
+    KillRequest:
+      type: object
+      required: [reason]
+      properties:
+        reason:
+          type: string
+          minLength: 3
+          maxLength: 500
+        terminate_ssh:
+          type: boolean
+          default: true
+        notify_user:
+          type: boolean
+          default: true
+
+    KillResult:
+      type: object
+      required: [session_id, state, killed_at, audit_id]
+      properties:
+        session_id:
+          type: string
+        state:
+          $ref: '#/components/schemas/SessionState'
+        killed_at:
+          type: string
+          format: date-time
+        revoked_certificate_ids:
+          type: array
+          items:
+            type: string
+        audit_id:
+          type: string
+        already_killed:
+          type: boolean
+
+    SessionPage:
+      type: object
+      required: [items, page]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Session'
+        page:
+          $ref: '#/components/schemas/PageInfo'
+
+    SshCertificateRequest:
+      type: object
+      required: [resource_id, host, public_key, principals, source_ip]
+      properties:
+        resource_id:
+          type: string
+        host:
+          type: string
+        public_key:
+          type: string
+          description: OpenSSH public key line generated for this connection.
+        principals:
+          type: array
+          minItems: 1
+          items:
+            type: string
+        ttl_seconds:
+          type: integer
+          minimum: 60
+          maximum: 1800
+          default: 1800
+        source_ip:
+          type: string
+        session_id:
+          type: string
+        spa_nonce:
+          type: string
+
+    SshCertificate:
+      type: object
+      required: [id, certificate, principals, valid_after, valid_before, key_id, serial]
+      properties:
+        id:
+          type: string
+        certificate:
+          type: string
+          description: OpenSSH certificate blob.
+        ca_public_key_id:
+          type: string
+        principals:
+          type: array
+          items:
+            type: string
+        valid_after:
+          type: string
+          format: date-time
+        valid_before:
+          type: string
+          format: date-time
+        key_id:
+          type: string
+        serial:
+          type: integer
+        source_address:
+          type: string
+        audit_id:
+          type: string
+
+    SshRevokeRequest:
+      type: object
+      required: [reason]
+      properties:
+        reason:
+          type: string
+        serial:
+          type: integer
+        terminate_connection:
+          type: boolean
+          default: true
+
+    RevocationResult:
+      type: object
+      required: [id, status, audit_id]
+      properties:
+        id:
+          type: string
+        status:
+          type: string
+          enum: [accepted, already_revoked, not_found]
+        effective_at:
+          type: string
+          format: date-time
+        impacted_session_ids:
+          type: array
+          items:
+            type: string
+        audit_id:
+          type: string
+
+    JitRequest:
+      type: object
+      required: [id, requester_id, resource_id, action, state, created_at, sla_expires_at]
+      properties:
+        id:
+          type: string
+        requester_id:
+          type: string
+        resource_id:
+          type: string
+        action:
+          type: string
+        requested_ttl_seconds:
+          type: integer
+        state:
+          $ref: '#/components/schemas/JitState'
+        justification:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        sla_expires_at:
+          type: string
+          format: date-time
+        decided_by:
+          type: [string, 'null']
+        decided_at:
+          type: [string, 'null']
+          format: date-time
+        decision_reason:
+          type: [string, 'null']
+        grant_expires_at:
+          type: [string, 'null']
+          format: date-time
+        session_id:
+          type: [string, 'null']
+        audit_id:
+          type: string
+
+    JitCreate:
+      type: object
+      required: [resource_id, action, justification]
+      properties:
+        resource_id:
+          type: string
+        action:
+          type: string
+        requested_ttl_seconds:
+          type: integer
+          minimum: 60
+          maximum: 3600
+          default: 1800
+        justification:
+          type: string
+          minLength: 10
+          maxLength: 1000
+        context:
+          $ref: '#/components/schemas/RequestContext'
+
+    JitDecision:
+      type: object
+      required: [reason]
+      properties:
+        reason:
+          type: string
+          minLength: 3
+          maxLength: 500
+        ttl_seconds:
+          type: integer
+          minimum: 60
+          maximum: 1800
+          default: 1800
+
+    JitPage:
+      type: object
+      required: [items, page]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/JitRequest'
+        page:
+          $ref: '#/components/schemas/PageInfo'
+
+    Policy:
+      type: object
+      required: [id, name, effect, priority, conditions, version, status]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        effect:
+          $ref: '#/components/schemas/PolicyEffect'
+        priority:
+          type: integer
+          minimum: 1
+          maximum: 1000
+        conditions:
+          type: object
+          additionalProperties: true
+        version:
+          type: integer
+        status:
+          type: string
+          enum: [draft, published, archived]
+        created_by:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        published_at:
+          type: [string, 'null']
+          format: date-time
+
+    PolicyCreate:
+      type: object
+      required: [name, effect, priority, conditions]
+      properties:
+        name:
+          type: string
+          minLength: 3
+          maxLength: 120
+        description:
+          type: string
+        effect:
+          $ref: '#/components/schemas/PolicyEffect'
+        priority:
+          type: integer
+          minimum: 1
+          maximum: 1000
+        conditions:
+          type: object
+          additionalProperties: true
+
+    PolicyUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        effect:
+          $ref: '#/components/schemas/PolicyEffect'
+        priority:
+          type: integer
+        conditions:
+          type: object
+          additionalProperties: true
+
+    PolicyVersion:
+      type: object
+      required: [policy_id, version, effect, priority, conditions, created_at]
+      properties:
+        policy_id:
+          type: string
+        version:
+          type: integer
+        effect:
+          $ref: '#/components/schemas/PolicyEffect'
+        priority:
+          type: integer
+        conditions:
+          type: object
+          additionalProperties: true
+        changelog:
+          type: string
+        created_by:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        published_at:
+          type: [string, 'null']
+          format: date-time
+
+    PolicyPage:
+      type: object
+      required: [items, page]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Policy'
+        page:
+          $ref: '#/components/schemas/PageInfo'
+
+    PolicyWhatIfRequest:
+      type: object
+      required: [draft, sample_size]
+      properties:
+        draft:
+          $ref: '#/components/schemas/PolicyCreate'
+        sample_size:
+          type: integer
+          minimum: 100
+          maximum: 50000
+        from:
+          type: string
+          format: date-time
+        to:
+          type: string
+          format: date-time
+
+    PolicyWhatIfResponse:
+      type: object
+      required: [sample_size, summary, deltas]
+      properties:
+        sample_size:
+          type: integer
+        summary:
+          type: object
+          additionalProperties:
+            type: integer
+        deltas:
+          type: array
+          items:
+            type: object
+            required: [decision, before, after]
+            properties:
+              decision:
+                $ref: '#/components/schemas/Decision'
+              before:
+                type: integer
+              after:
+                type: integer
+        examples:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+
+    RiskEvaluateResponse:
+      type: object
+      required: [trust_score, band, signals, ml_adjustment, model_version, evaluated_at]
+      properties:
+        trust_score:
+          type: integer
+          minimum: 0
+          maximum: 100
+        band:
+          $ref: '#/components/schemas/Band'
+        signals:
+          type: array
+          items:
+            $ref: '#/components/schemas/TrustSignal'
+        ml_adjustment:
+          type: integer
+        model_version:
+          type: string
+        reason_codes:
+          type: array
+          items:
+            type: string
+        evaluated_at:
+          type: string
+          format: date-time
+
+    RiskSignalDefinition:
+      type: object
+      required: [id, category, description, points, hard_gate]
+      properties:
+        id:
+          type: string
+          example: NW-01
+        category:
+          type: string
+          enum: [identity, device, network, behaviour, session]
+        description:
+          type: string
+        points:
+          type: integer
+        hard_gate:
+          type: boolean
+        source:
+          type: string
+
+    RiskModel:
+      type: object
+      required: [version, kind, status, trained_at]
+      properties:
+        version:
+          type: string
+        kind:
+          type: string
+          enum: [rules, isolation_forest, lightgbm]
+        status:
+          type: string
+          enum: [shadow, canary, active, retired]
+        trained_at:
+          type: string
+          format: date-time
+        metrics:
+          type: object
+          additionalProperties:
+            type: number
+        feature_hash:
+          type: string
+
+    AuditEvent:
+      type: object
+      required: [seq, id, type, payload_hash, prev_hash, created_at]
+      properties:
+        seq:
+          type: integer
+          minimum: 1
+        id:
+          type: string
+        type:
+          type: string
+          example: SESSION_KILLED
+        actor_id:
+          type: [string, 'null']
+        session_id:
+          type: [string, 'null']
+        request_id:
+          type: [string, 'null']
+        payload_hash:
+          type: string
+        prev_hash:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        payload:
+          type: object
+          additionalProperties: true
+
+    AuditPage:
+      type: object
+      required: [items, page]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AuditEvent'
+        page:
+          $ref: '#/components/schemas/PageInfo'
+
+    AuditVerifyRequest:
+      type: object
+      properties:
+        from_seq:
+          type: integer
+          minimum: 1
+        to_seq:
+          type: integer
+          minimum: 1
+
+    AuditVerifyResponse:
+      type: object
+      required: [valid, checked, verified_at]
+      properties:
+        valid:
+          type: boolean
+        checked:
+          type: integer
+        first_invalid_seq:
+          type: [integer, 'null']
+        head_hash:
+          type: string
+        verified_at:
+          type: string
+          format: date-time
+
+    AuditExportRequest:
+      type: object
+      required: [from_seq, to_seq]
+      properties:
+        from_seq:
+          type: integer
+          minimum: 1
+        to_seq:
+          type: integer
+          minimum: 1
+        verify:
+          type: boolean
+          default: true
+
+    VaultItem:
+      type: object
+      required: [id, name, kind, owner_id, created_at]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        kind:
+          type: string
+          enum: [password, ssh_key, api_token, note]
+        owner_id:
+          type: string
+        shared_with:
+          type: array
+          items:
+            type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        last_accessed_at:
+          type: [string, 'null']
+          format: date-time
+
+    VaultItemCreate:
+      type: object
+      required: [name, kind, secret]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        kind:
+          type: string
+          enum: [password, ssh_key, api_token, note]
+        secret:
+          type: string
+          description: encrypted client-side or by the vault service
+        metadata:
+          type: object
+          additionalProperties: true
+
+    VaultItemSecret:
+      allOf:
+        - $ref: '#/components/schemas/VaultItem'
+        - type: object
+          required: [secret]
+          properties:
+            secret:
+              type: string
+            access_expires_at:
+              type: string
+              format: date-time
+
+    VaultShareRequest:
+      type: object
+      required: [recipient_id, expires_at]
+      properties:
+        recipient_id:
+          type: string
+        expires_at:
+          type: string
+          format: date-time
+        permission:
+          type: string
+          enum: [read, write]
+          default: read
+
+    VaultShare:
+      type: object
+      required: [id, item_id, recipient_id, expires_at]
+      properties:
+        id:
+          type: string
+        item_id:
+          type: string
+        recipient_id:
+          type: string
+        permission:
+          type: string
+          enum: [read, write]
+        expires_at:
+          type: string
+          format: date-time
+
+    RecoveryShareRequest:
+      type: object
+      required: [item_id, threshold, total]
+      properties:
+        item_id:
+          type: string
+        threshold:
+          type: integer
+          minimum: 2
+          maximum: 5
+        total:
+          type: integer
+          minimum: 3
+          maximum: 5
+        holders:
+          type: array
+          items:
+            type: string
+
+    RecoveryShareSet:
+      type: object
+      required: [item_id, threshold, total, shares]
+      properties:
+        item_id:
+          type: string
+        threshold:
+          type: integer
+        total:
+          type: integer
+        shares:
+          type: array
+          items:
+            type: object
+            required: [index, holder_label]
+            properties:
+              index:
+                type: integer
+              holder_label:
+                type: string
+              fingerprint:
+                type: string
+
+    RecoveryRebuildRequest:
+      type: object
+      required: [item_id, shares]
+      properties:
+        item_id:
+          type: string
+        shares:
+          type: array
+          minItems: 2
+          maxItems: 5
+          items:
+            type: string
+            description: Base64url-encoded share. Never logged.
+
+    RecoveryRebuildResponse:
+      type: object
+      required: [rebuilt, item_id, shares_used, audit_id]
+      properties:
+        rebuilt:
+          type: boolean
+        item_id:
+          type: string
+        shares_used:
+          type: integer
+        expires_at:
+          type: string
+          format: date-time
+        audit_id:
+          type: string
+
+    SpaKnockRequest:
+      type: object
+      required: [resource_id, source_ip, nonce, timestamp, signature]
+      properties:
+        resource_id:
+          type: string
+        source_ip:
+          type: string
+        nonce:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        signature:
+          type: string
+
+    SpaKnockResponse:
+      type: object
+      required: [resource_id, port, opened_until]
+      properties:
+        resource_id:
+          type: string
+        port:
+          type: integer
+        opened_until:
+          type: string
+          format: date-time
+
+    AttackScenario:
+      type: object
+      required: [id, name, description, expected_decision, expected_reason_codes]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        expected_decision:
+          $ref: '#/components/schemas/Decision'
+        expected_reason_codes:
+          type: array
+          items:
+            type: string
+        requires:
+          type: array
+          items:
+            type: string
+
+    AttackRunRequest:
+      type: object
+      properties:
+        target_session_id:
+          type: string
+        parameters:
+          type: object
+          additionalProperties: true
+
+    AttackRunResponse:
+      type: object
+      required: [run_id, scenario_id, decision, blocked, started_at, finished_at]
+      properties:
+        run_id:
+          type: string
+        scenario_id:
+          type: string
+        decision:
+          $ref: '#/components/schemas/Decision'
+        reason_codes:
+          type: array
+          items:
+            type: string
+        blocked:
+          type: boolean
+        audit_ids:
+          type: array
+          items:
+            type: string
+        started_at:
+          type: string
+          format: date-time
+        finished_at:
+          type: string
+          format: date-time
+
+    LatencySnapshot:
+      type: object
+      required: [window, request_count, checks]
+      properties:
+        window:
+          type: string
+        request_count:
+          type: integer
+        checks:
+          type: array
+          items:
+            type: object
+            required: [name, p50_ms, p95_ms, p99_ms]
+            properties:
+              name:
+                type: string
+                enum: [passkey, risk, policy, proxy, ssh, audit]
+              p50_ms:
+                type: number
+              p95_ms:
+                type: number
+              p99_ms:
+                type: number
+              error_rate:
+                type: number
+
+    AdminOverview:
+      type: object
+      required: [users, devices, live_sessions, pending_jit, last_audit_seq]
+      properties:
+        users:
+          type: integer
+        devices:
+          type: integer
+        live_sessions:
+          type: integer
+        pending_jit:
+          type: integer
+        unhealthy_devices:
+          type: integer
+        last_audit_seq:
+          type: integer
+        generated_at:
+          type: string
+          format: date-time
+
+    DevicePage:
+      type: object
+      required: [items, page]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Device'
+        page:
+          $ref: '#/components/schemas/PageInfo'
+
+    VaultPage:
+      type: object
+      required: [items, page]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/VaultItem'
+        page:
+          $ref: '#/components/schemas/PageInfo'

@@ -1,0 +1,743 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Just-in-time approval &middot; ZeroGate</title>
+<meta name="description" content="When the score is a question rather than a refusal, a human answers inside a bounded window.">
+<meta name="color-scheme" content="light">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --paper: #f4f1e9;
+  --paper-2: #ebe6da;
+  --white: #ffffff;
+  --ink: #1f2a30;
+  --muted: #52646c;
+  --soft: #5c6f77;
+  --rule: rgba(31,42,48,0.12);
+  --rule-solid: #c9c2b4;
+  --accent: #b54427;
+  --accent-tint: rgba(181,68,39,0.08);
+  --link: #2c5d8a;
+  --sans: 'Geist', system-ui, sans-serif;
+  --serif: 'Instrument Serif', 'Noto Serif', serif;
+  --mono: 'Geist Mono', ui-monospace, monospace;
+}
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--sans);
+  background: var(--paper);
+  color: var(--ink);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+::selection { background: rgba(181,68,39,0.18); }
+
+/* ---------- header ---------- */
+.site-header {
+  border-bottom: 1px solid var(--rule);
+  padding: 18px 0;
+}
+.header-inner {
+  width: min(1300px, calc(100% - 64px));
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+.brand {
+  display: flex; align-items: center; gap: 12px;
+  text-decoration: none; color: var(--ink);
+}
+.brand-mark {
+  width: 30px; height: 30px;
+  display: grid; place-items: center;
+  background: var(--accent); color: var(--paper);
+  font-family: var(--serif); font-size: 15px; line-height: 1;
+  border-radius: 3px;
+}
+.brand-text { display: flex; flex-direction: column; gap: 1px; }
+.brand-name { font-family: var(--serif); font-size: 19px; letter-spacing: -0.01em; }
+.brand-sub {
+  font-family: var(--mono); font-size: 8px; letter-spacing: 0.18em;
+  text-transform: uppercase; color: var(--muted);
+}
+.site-nav { display: flex; align-items: center; gap: 22px; flex-wrap: wrap; }
+.site-nav a {
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--muted); text-decoration: none;
+  border-bottom: 1px solid transparent; padding-bottom: 2px;
+}
+.site-nav a:hover, .site-nav a[aria-current="page"] {
+  color: var(--ink); border-bottom-color: var(--accent);
+}
+
+/* ---------- page ---------- */
+.wrap { width: min(1300px, calc(100% - 64px)); margin: 0 auto; }
+.page { padding: 64px 0 72px; }
+.chapter {
+  display: flex; align-items: center; gap: 12px; margin-bottom: 18px;
+}
+.chapter-num {
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em;
+  color: var(--accent); border: 1px solid rgba(181,68,39,0.35);
+  border-radius: 2px; padding: 3px 6px; line-height: 1;
+}
+.eyebrow {
+  font-family: var(--mono); font-size: 10px; font-weight: 500;
+  letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted);
+}
+h1 {
+  font-family: var(--serif); font-weight: 400; font-size: clamp(2.3rem, 4vw + 1rem, 3.6rem);
+  line-height: 1.02; letter-spacing: -0.025em; max-width: 980px;
+}
+.lede {
+  font-size: 19px; line-height: 1.62; color: var(--muted);
+  max-width: 790px; margin-top: 20px;
+}
+.meta-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 26px; }
+.chip {
+  font-family: var(--mono); font-size: 9px; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--muted);
+  border: 1px solid var(--rule); border-radius: 2px;
+  padding: 5px 8px; background: rgba(255,255,255,0.45);
+}
+.chip strong { color: var(--ink); font-weight: 500; }
+
+/* ---------- diagram ---------- */
+.diagram-block { margin: 44px 0 0; }
+.diagram-top {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 20px; border-top: 1px solid var(--rule); padding-top: 16px;
+}
+.diagram-label {
+  font-family: var(--mono); font-size: 9px; letter-spacing: 0.16em;
+  text-transform: uppercase; color: var(--soft);
+}
+.diagram-hint {
+  display: none; white-space: nowrap;
+  font-family: var(--mono); font-size: 9px; letter-spacing: 0.04em;
+  color: var(--soft); text-align: right;
+}
+.diagram-container {
+  width: 100%; overflow-x: auto; margin-top: 8px;
+  scrollbar-width: thin; scrollbar-color: var(--rule-solid) transparent;
+}
+.diagram-container svg { width: 100%; display: block; }
+.caption {
+  font-size: 12.5px; line-height: 1.6; color: var(--muted);
+  max-width: 900px; margin-top: 12px;
+}
+.caption b { color: var(--ink); font-weight: 600; }
+
+/* ---------- cards ---------- */
+.cards {
+  display: grid; grid-template-columns: 1.15fr 0.95fr 0.9fr;
+  gap: 16px; margin: 40px 0 0;
+}
+.cards.two { grid-template-columns: 1.25fr 0.75fr; }
+.cards.four { grid-template-columns: 1.1fr 1fr 0.9fr 0.9fr; }
+.card {
+  background: var(--white); border: 1px solid var(--rule);
+  border-radius: 6px; padding: 20px; min-width: 0;
+}
+.card-label {
+  font-family: var(--mono); font-size: 8px; letter-spacing: 0.16em;
+  text-transform: uppercase; color: var(--soft); margin-bottom: 10px;
+}
+.card h3 {
+  font-size: 15px; font-weight: 600; letter-spacing: -0.01em;
+  line-height: 1.3; margin-bottom: 10px;
+}
+.card p, .card li { font-size: 12.5px; line-height: 1.62; color: var(--muted); }
+.card ul, .card ol { padding-left: 16px; display: grid; gap: 6px; }
+.card li::marker { color: var(--accent); }
+.card .rule-list { list-style: none; padding-left: 0; }
+.card .rule-list li {
+  border-top: 1px solid var(--rule); padding-top: 8px;
+}
+.card .rule-list li:first-child { border-top: 0; padding-top: 0; }
+.card .mono { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.02em; color: var(--ink); }
+.card-dot {
+  display: inline-block; width: 7px; height: 7px; border-radius: 50%;
+  margin-right: 7px; vertical-align: 1px;
+}
+.dot-accent { background: var(--accent); }
+.dot-ink { background: var(--ink); }
+.dot-muted { background: var(--muted); }
+.dot-link { background: var(--link); }
+.dot-soft { background: var(--soft); }
+
+/* ---------- prose ---------- */
+.prose { max-width: 900px; margin-top: 52px; }
+.prose.wide { max-width: 100%; }
+.prose.wide > p { max-width: 760px; }
+.prose.wide > .callout { max-width: 900px; }
+.prose h2 {
+  font-family: var(--serif); font-weight: 400; font-size: 32px;
+  line-height: 1.12; letter-spacing: -0.02em; margin: 54px 0 16px;
+}
+.prose h2:first-child { margin-top: 0; }
+.prose h3 {
+  font-size: 16px; font-weight: 600; letter-spacing: -0.01em;
+  margin: 32px 0 10px;
+}
+.prose h4 {
+  font-family: var(--mono); font-size: 10px; font-weight: 500;
+  letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);
+  margin: 26px 0 8px;
+}
+.prose p { font-size: 15px; line-height: 1.72; color: var(--muted); margin: 12px 0; }
+.prose p strong, .prose li strong { color: var(--ink); font-weight: 600; }
+.prose ul, .prose ol { margin: 12px 0 12px 22px; display: grid; gap: 7px; }
+.prose li { font-size: 14.5px; line-height: 1.65; color: var(--muted); }
+.prose li::marker { color: var(--accent); }
+.prose a { color: var(--link); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+.prose code {
+  font-family: var(--mono); font-size: 12px; background: var(--paper-2);
+  border: 1px solid rgba(31,42,48,0.06); border-radius: 2px;
+  padding: 1px 4px; color: var(--ink);
+}
+.prose pre {
+  background: var(--ink); color: #ece7db; border-radius: 6px;
+  padding: 20px 22px; overflow-x: auto; margin: 18px 0;
+  font-family: var(--mono); font-size: 12px; line-height: 1.65;
+}
+.prose pre code { background: none; border: 0; padding: 0; color: inherit; }
+.prose blockquote {
+  border-left: 2px solid var(--accent); padding: 2px 0 2px 20px;
+  margin: 22px 0; font-family: var(--serif); font-size: 21px;
+  line-height: 1.5; color: var(--ink);
+}
+.prose blockquote p { font-size: inherit; color: inherit; }
+.prose hr { border: 0; border-top: 1px solid var(--rule); margin: 36px 0; }
+
+/* ---------- tables ---------- */
+.table-wrap { width: 100%; overflow-x: auto; margin: 18px 0 24px; }
+table {
+  width: 100%; border-collapse: collapse; font-size: 12.5px;
+  line-height: 1.5; background: rgba(255,255,255,0.38);
+}
+th {
+  font-family: var(--mono); font-size: 8.5px; font-weight: 500;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--soft);
+  text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--ink);
+  vertical-align: bottom; white-space: nowrap;
+}
+td {
+  padding: 10px 12px; border-bottom: 1px solid var(--rule);
+  color: var(--muted); vertical-align: top;
+}
+td:first-child { color: var(--ink); }
+tbody tr:hover td { background: rgba(255,255,255,0.55); }
+td code, th code { font-family: var(--mono); font-size: 11px; }
+table.compact td, table.compact th { padding: 7px 10px; }
+
+/* ---------- method tags ---------- */
+.method {
+  display: inline-block; font-family: var(--mono); font-size: 9px;
+  font-weight: 500; letter-spacing: 0.06em; line-height: 1;
+  padding: 4px 5px 3px; border-radius: 2px; min-width: 42px;
+  text-align: center; color: var(--ink); border: 1px solid var(--rule-solid);
+  background: var(--paper);
+}
+.method.get { color: #2c5d8a; border-color: rgba(44,93,138,0.4); background: rgba(44,93,138,0.06); }
+.method.post { color: #6d5a1f; border-color: rgba(109,90,31,0.4); background: rgba(109,90,31,0.06); }
+.method.put, .method.patch { color: #61522b; border-color: rgba(97,82,43,0.4); background: rgba(97,82,43,0.06); }
+.method.delete { color: var(--accent); border-color: rgba(181,68,39,0.4); background: rgba(181,68,39,0.06); }
+
+/* ---------- page nav / footer ---------- */
+.page-nav {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+  margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--rule);
+}
+.page-nav a {
+  display: block; text-decoration: none; color: var(--ink);
+  border: 1px solid var(--rule); border-radius: 6px; padding: 16px 18px;
+  background: rgba(255,255,255,0.35);
+}
+.page-nav a:hover { border-color: var(--rule-solid); background: var(--white); }
+.page-nav .dir {
+  font-family: var(--mono); font-size: 8px; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--soft); display: block; margin-bottom: 5px;
+}
+.page-nav .name { font-family: var(--serif); font-size: 20px; }
+.page-nav .next { text-align: right; }
+.site-footer {
+  border-top: 1px solid var(--rule); padding: 24px 0 40px;
+}
+.footer-inner {
+  width: min(1300px, calc(100% - 64px)); margin: 0 auto;
+  display: flex; justify-content: space-between; gap: 24px; flex-wrap: wrap;
+  font-family: var(--mono); font-size: 9.5px; line-height: 1.7;
+  letter-spacing: 0.04em; color: var(--soft);
+}
+.footer-inner a { color: var(--muted); text-decoration: none; border-bottom: 1px solid var(--rule); }
+
+/* ---------- index ---------- */
+.index-hero { padding: 80px 0 44px; }
+.index-hero h1 { font-size: clamp(3rem, 7vw + 0.5rem, 6.2rem); max-width: 1000px; }
+.index-hero .lede { max-width: 680px; font-size: 20px; }
+.index-rule {
+  display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px;
+  border-top: 1px solid var(--ink); border-bottom: 1px solid var(--rule);
+  padding: 20px 0; margin-top: 40px;
+}
+.index-rule div { display: flex; flex-direction: column; gap: 4px; }
+.index-rule .k {
+  font-family: var(--mono); font-size: 8px; letter-spacing: 0.16em;
+  text-transform: uppercase; color: var(--soft);
+}
+.index-rule .v { font-size: 13px; color: var(--ink); }
+.section-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 20px; margin: 64px 0 20px; border-bottom: 1px solid var(--ink);
+  padding-bottom: 10px;
+}
+.section-head h2 {
+  font-family: var(--serif); font-weight: 400; font-size: 34px;
+  letter-spacing: -0.02em;
+}
+.section-head .count {
+  font-family: var(--mono); font-size: 9px; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--soft);
+}
+.toc-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;
+}
+.toc-grid.four { grid-template-columns: repeat(4, 1fr); }
+.toc-grid .wide { grid-column: span 2; }
+.toc-card {
+  display: block; text-decoration: none; color: var(--ink);
+  background: rgba(255,255,255,0.45); border: 1px solid var(--rule);
+  border-radius: 6px; padding: 20px; min-height: 148px;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+.toc-card:hover { background: var(--white); border-color: var(--rule-solid); }
+.toc-card .num {
+  font-family: var(--mono); font-size: 9px; letter-spacing: 0.1em;
+  color: var(--accent); margin-bottom: 18px; display: block;
+}
+.toc-card h3 {
+  font-family: var(--serif); font-weight: 400; font-size: 24px;
+  line-height: 1.1; letter-spacing: -0.015em; margin-bottom: 8px;
+}
+.toc-card p { font-size: 12.5px; line-height: 1.55; color: var(--muted); }
+.toc-card .type {
+  display: block; margin-top: 14px; font-family: var(--mono);
+  font-size: 8px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--soft);
+}
+.toc-card.accent { border-color: rgba(181,68,39,0.4); background: var(--accent-tint); }
+.toc-card.accent:hover { background: rgba(181,68,39,0.12); }
+.manifest {
+  margin-top: 64px; border-top: 1px solid var(--ink); padding-top: 20px;
+  display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 32px;
+}
+.manifest p { font-size: 13px; line-height: 1.65; color: var(--muted); }
+.manifest h3 {
+  font-family: var(--mono); font-size: 9px; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--soft); margin-bottom: 10px;
+}
+.manifest ul { list-style: none; display: grid; gap: 6px; }
+.manifest li { font-size: 12.5px; color: var(--muted); }
+.manifest li span { color: var(--ink); font-family: var(--mono); font-size: 10px; }
+
+/* ---------- risk specific ---------- */
+.risk-band {
+  display: grid; grid-template-columns: 1.4fr 1fr 1fr 1.4fr;
+  border: 1px solid var(--rule); border-radius: 6px; overflow: hidden;
+  margin: 24px 0;
+}
+.risk-band div { padding: 14px 16px; border-left: 1px solid var(--rule); }
+.risk-band div:first-child { border-left: 0; }
+.risk-band .band-name {
+  font-family: var(--mono); font-size: 9px; letter-spacing: 0.12em;
+  text-transform: uppercase; margin-bottom: 4px;
+}
+.risk-band .band-range { font-family: var(--serif); font-size: 26px; line-height: 1; }
+.risk-band .band-action { font-size: 11px; color: var(--muted); margin-top: 6px; }
+.band-allow { background: rgba(111,130,100,0.10); }
+.band-step { background: rgba(166,124,61,0.10); }
+.band-approve { background: rgba(44,93,138,0.08); }
+.band-deny { background: rgba(181,68,39,0.10); }
+
+/* ---------- additions for the dossier ---------- */
+.skip {
+  position: absolute; left: -9999px; top: 0; z-index: 20;
+  background: var(--ink); color: var(--paper); padding: 10px 14px;
+  font-family: var(--mono); font-size: 11px; text-decoration: none;
+}
+.skip:focus { left: 16px; top: 16px; }
+.figure-stack .diagram-block { margin-top: 40px; }
+.figure-stack .diagram-block:first-child { margin-top: 44px; }
+.callout {
+  border: 1px solid var(--rule); border-left: 2px solid var(--accent);
+  background: rgba(255,255,255,0.46); border-radius: 4px;
+  padding: 16px 20px; margin: 22px 0;
+}
+.callout .k {
+  font-family: var(--mono); font-size: 8px; letter-spacing: 0.16em;
+  text-transform: uppercase; color: var(--soft); display: block; margin-bottom: 7px;
+}
+.callout p { margin: 0; font-size: 13px; line-height: 1.65; color: var(--muted); }
+.callout p + p { margin-top: 8px; }
+.badge {
+  display: inline-block; font-family: var(--mono); font-size: 8px;
+  letter-spacing: 0.06em; text-transform: uppercase; line-height: 1;
+  padding: 4px 6px 3px; border: 1px solid var(--rule-solid);
+  border-radius: 2px; white-space: nowrap; color: var(--ink);
+  background: var(--paper);
+}
+.badge.core { color: #3f5a3a; border-color: rgba(63,90,58,0.35); background: rgba(63,90,58,0.07); }
+.badge.add-on { color: #6d5a1f; border-color: rgba(109,90,31,0.35); background: rgba(109,90,31,0.07); }
+.badge.stretch { color: var(--link); border-color: rgba(44,93,138,0.35); background: rgba(44,93,138,0.07); }
+.stat-strip {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  border-top: 1px solid var(--ink); border-bottom: 1px solid var(--rule);
+  margin: 36px 0 0;
+}
+.stat-strip .stat { padding: 16px 18px 14px; border-left: 1px solid var(--rule); }
+.stat-strip .stat:first-child { border-left: 0; padding-left: 0; }
+.stat-strip .n {
+  display: block; font-family: var(--serif); font-size: 34px;
+  line-height: 1; letter-spacing: -0.02em;
+}
+.stat-strip .l {
+  display: block; margin-top: 5px; font-family: var(--mono);
+  font-size: 8px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--soft);
+}
+.api-table td:first-child { width: 66px; white-space: nowrap; }
+.api-table td:nth-child(2) { white-space: nowrap; }
+.api-table .path {
+  font-family: var(--mono); font-size: 11.5px; color: var(--ink);
+  letter-spacing: -0.01em;
+}
+.api-table td:last-child { font-size: 11.5px; }
+caption {
+  caption-side: top; text-align: left; padding-bottom: 8px;
+  font-family: var(--mono); font-size: 8px; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--soft);
+}
+.mini-note {
+  font-family: var(--mono); font-size: 9px; line-height: 1.6;
+  letter-spacing: 0.03em; color: var(--soft); margin-top: 10px;
+}
+.link-row { display: flex; gap: 18px; flex-wrap: wrap; margin-top: 18px; }
+.link-row a {
+  font-family: var(--mono); font-size: 9px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--link); text-decoration: none;
+  border-bottom: 1px solid rgba(44,93,138,0.35); padding-bottom: 3px;
+}
+.link-row a:hover { border-bottom-color: var(--link); }
+.pdf-row { margin-top: 16px; }
+.pdf-download {
+  display: inline-flex; align-items: center; gap: 9px;
+  font-family: var(--mono); font-size: 9px; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--ink); text-decoration: none;
+  border: 1px solid var(--rule-solid); padding: 8px 11px;
+  background: rgba(255,255,255,0.5); border-radius: 2px;
+}
+.pdf-download:hover { border-color: var(--ink); background: var(--white); }
+.pdf-download .pdf-tag { color: var(--accent); font-weight: 600; letter-spacing: 0.12em; }
+.pdf-download .arrow { color: var(--accent); }
+
+/* ---------- report layout ---------- */
+.report-layout {
+  display: grid; grid-template-columns: minmax(0, 1fr) 216px;
+  gap: 56px; align-items: start; margin-top: 44px;
+}
+.report-body.prose { max-width: none; margin-top: 0; }
+.report-aside {
+  position: sticky; top: 22px; border-top: 1px solid var(--ink);
+  padding-top: 12px;
+}
+.report-aside .card-label { margin-bottom: 12px; }
+.report-aside nav { display: grid; gap: 7px; }
+.report-aside a {
+  font-family: var(--mono); font-size: 9px; line-height: 1.5;
+  letter-spacing: 0.02em; color: var(--muted); text-decoration: none;
+  display: block; border-left: 1px solid transparent; padding-left: 9px;
+}
+.report-aside a:hover { color: var(--ink); border-left-color: var(--accent); }
+.report-aside .aside-rule {
+  border-top: 1px solid var(--rule); margin: 14px 0 12px;
+}
+.report-aside .aside-meta {
+  font-family: var(--mono); font-size: 8px; letter-spacing: 0.08em;
+  line-height: 1.7; color: var(--soft); text-transform: uppercase;
+}
+.report-body h2, .report-body h3 { scroll-margin-top: 18px; }
+.report-body h2:first-child { margin-top: 0; }
+.report-body table { font-size: 11.8px; }
+.report-body td, .report-body th { padding: 8px 10px; }
+.report-body .table-wrap { margin: 14px 0 20px; }
+.report-body pre { font-size: 11.5px; }
+
+/* ---------- API reference ---------- */
+.api-mobile-note { display: none; }
+.api-group { margin-top: 46px; }
+.api-group-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 20px; border-top: 1px solid var(--ink); padding-top: 10px;
+  margin-bottom: 4px;
+}
+.api-group-head h2 {
+  font-family: var(--serif); font-weight: 400; font-size: 29px;
+  letter-spacing: -0.02em; margin: 0;
+}
+.api-group-head .count {
+  font-family: var(--mono); font-size: 8px; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--soft); white-space: nowrap;
+}
+.api-group-desc {
+  font-size: 13px; line-height: 1.6; color: var(--muted);
+  max-width: 760px; margin: 0 0 12px;
+}
+.api-table td { vertical-align: top; }
+.api-table tr[id] { scroll-margin-top: 24px; }
+.api-table .op-id {
+  display: block; font-family: var(--mono); font-size: 8px;
+  letter-spacing: 0.03em; color: var(--soft); margin-top: 3px;
+}
+.api-table .auth {
+  font-family: var(--mono); font-size: 8px; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--muted); white-space: nowrap;
+}
+.api-table .success {
+  font-family: var(--mono); font-size: 9px; color: var(--muted);
+  white-space: nowrap;
+}
+.api-deep {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+  margin-top: 26px;
+}
+.api-deep .card { background: rgba(255,255,255,0.5); }
+.api-deep .card h3 { font-family: var(--serif); font-size: 24px; font-weight: 400; }
+.api-deep .card .mono { margin-bottom: 10px; }
+.api-deep .card pre { margin: 10px 0 0; font-size: 10.5px; padding: 14px 16px; }
+.api-deep .card .method { margin-right: 6px; }
+.schema-grid { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.schema-chip {
+  font-family: var(--mono); font-size: 8.5px; letter-spacing: 0.02em;
+  color: var(--muted); border: 1px solid var(--rule); border-radius: 2px;
+  padding: 4px 6px; background: rgba(255,255,255,0.45);
+}
+.op-index { display: grid; gap: 8px; }
+.op-index a {
+  display: flex; gap: 10px; align-items: baseline; text-decoration: none;
+  color: var(--muted); font-size: 12.5px;
+}
+.op-index a:hover { color: var(--ink); }
+.op-index .method { flex: 0 0 44px; }
+.op-index .path { font-family: var(--mono); font-size: 10.5px; color: var(--ink); }
+
+/* ---------- extra editorial bits ---------- */
+.hero-em { color: var(--accent); font-style: italic; }
+.section-note {
+  font-family: var(--mono); font-size: 9px; letter-spacing: 0.04em;
+  color: var(--soft); margin-top: 10px;
+}
+.band-strip {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  border: 1px solid var(--rule); border-radius: 6px; overflow: hidden;
+  margin: 24px 0 28px;
+}
+.band-strip div { padding: 16px 18px; border-left: 1px solid var(--rule); }
+.band-strip div:first-child { border-left: 0; }
+.band-strip .k {
+  font-family: var(--mono); font-size: 8px; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--soft); display: block; margin-bottom: 5px;
+}
+.band-strip .v { font-family: var(--serif); font-size: 22px; line-height: 1; display: block; }
+.band-strip .d { font-size: 10.5px; line-height: 1.45; color: var(--muted); margin-top: 6px; display: block; }
+.rule-table td:first-child { font-family: var(--mono); font-size: 10px; white-space: nowrap; }
+.step-table td:first-child {
+  font-family: var(--mono); font-size: 9px; color: var(--accent);
+  width: 42px; white-space: nowrap;
+}
+.step-table td:nth-child(2) { color: var(--ink); white-space: nowrap; }
+.step-table td:nth-child(3) { font-family: var(--mono); font-size: 10px; white-space: nowrap; }
+.kv { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 18px; }
+.kv .card { padding: 16px 18px; }
+.kv .card h3 { font-size: 13px; }
+.path-row {
+  display: grid; grid-template-columns: 54px 1.1fr 1.6fr; gap: 16px;
+  align-items: start; border-top: 1px solid var(--rule); padding: 14px 0;
+}
+.path-row:last-child { border-bottom: 1px solid var(--rule); }
+.path-row .n {
+  font-family: var(--mono); font-size: 9px; letter-spacing: 0.1em;
+  color: var(--accent); padding-top: 2px;
+}
+.path-row h3 { font-size: 14px; font-weight: 600; margin-bottom: 3px; }
+.path-row p { font-size: 12px; line-height: 1.6; color: var(--muted); }
+.path-row a { color: var(--link); text-decoration: none; border-bottom: 1px solid rgba(44,93,138,0.3); }
+
+/* ---------- responsive ---------- */
+@media (max-width: 980px) {
+  .report-layout { grid-template-columns: minmax(0, 1fr); gap: 24px; }
+  .report-aside { display: none; }
+  .diagram-hint { display: inline; }
+  .api-deep { grid-template-columns: 1fr; }
+  .band-strip { grid-template-columns: 1fr 1fr; }
+  .band-strip div:nth-child(3) { border-left: 0; }
+  .band-strip div:nth-child(n+3) { border-top: 1px solid var(--rule); }
+  .cards, .cards.four { grid-template-columns: 1fr 1fr; }
+  .cards .card:last-child { grid-column: span 2; }
+  .toc-grid, .toc-grid.four { grid-template-columns: 1fr 1fr; }
+  .toc-grid .wide { grid-column: span 2; }
+  .manifest { grid-template-columns: 1fr 1fr; }
+  .index-rule { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 700px) {
+  .header-inner, .wrap, .footer-inner { width: calc(100% - 40px); }
+  .api-table th:nth-child(4), .api-table td:nth-child(4),
+  .api-table th:nth-child(5), .api-table td:nth-child(5) { display: none; }
+  .api-table td:nth-child(2) { white-space: normal; }
+  .api-table .path { overflow-wrap: anywhere; }
+  .api-mobile-note { display: block; }
+  .report-body td:first-child { white-space: nowrap; }
+  .site-header { padding: 14px 0; }
+  .site-nav { gap: 12px; }
+  .site-nav a { font-size: 9px; }
+  .page { padding: 44px 0 56px; }
+  h1 { font-size: clamp(2rem, 10vw, 3rem); }
+  .lede { font-size: 17px; }
+  .cards, .cards.two, .cards.four, .toc-grid, .toc-grid.four, .manifest, .index-rule { grid-template-columns: 1fr; }
+  .cards .card:last-child, .toc-grid .wide { grid-column: auto; }
+  .page-nav { grid-template-columns: 1fr; }
+  .stat-strip { grid-template-columns: 1fr 1fr; }
+  .stat-strip .stat:nth-child(3) { border-left: 0; padding-left: 0; }
+  .stat-strip .stat:nth-child(n+3) { border-top: 1px solid var(--rule); }
+  .risk-band { grid-template-columns: 1fr 1fr; }
+  .risk-band div:nth-child(3) { border-left: 0; }
+  .risk-band div:nth-child(n+3) { border-top: 1px solid var(--rule); }
+  .prose h2 { font-size: 28px; }
+  .path-row { grid-template-columns: 38px 1fr; }
+  .path-row p { grid-column: 2; }
+}
+@media print {
+  .site-header, .site-footer, .page-nav, .diagram-hint, .report-aside { display: none; }
+  body { background: #fff; }
+  .page { padding: 0; }
+  .wrap { width: 100%; }
+  .report-layout { display: block; margin-top: 24px; }
+  .diagram-container { overflow-x: visible; }
+  .diagram-container svg { min-width: 0 !important; }
+  .card, .callout, .risk-band, .band-strip { break-inside: avoid; }
+  table { break-inside: auto; }
+  tr { break-inside: avoid; }
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="site-header">
+  <div class="header-inner">
+    <a class="brand" href="index.html" aria-label="ZeroGate design dossier, home">
+      <span class="brand-mark" aria-hidden="true">ZG</span>
+      <span class="brand-text">
+        <span class="brand-name">ZeroGate</span>
+        <span class="brand-sub">Zero-trust access broker &middot; dossier</span>
+      </span>
+    </a>
+    <nav class="site-nav" aria-label="Dossier sections">
+      <a href="index.html">Atlas</a><a href="architecture.html">System</a><a href="domain-model.html">Domain</a><a href="data-model.html">Data</a><a href="flow-passkey.html" aria-current="page">Flows</a><a href="policy-engine.html">Policy</a><a href="state-session.html">States</a><a href="risk-scoring.html">Risk</a><a href="requirements.html">Requirements</a><a href="api.html">API</a>
+    </nav>
+  </div>
+</header>
+<main id="main">
+
+<div class="wrap">
+  <div class="page">
+    <header class="page-head"><div class="chapter"><span class="chapter-num">07</span><span class="eyebrow">FLOWS / APPROVAL</span></div><h1>When the score is<br>a question, not a no.</h1><p class="lede">A request in the 40&ndash;59 band is not denied; it is suspended and sent to a human. The approver sees the score, the reasons, the device posture, and the requested resource. A grant is single-use, time-boxed, and re-checked against policy before it is issued.</p><div class="meta-row"><span class="chip">FIG. <strong>07</strong></span><span class="chip">5 <strong>lifelines</strong></span><span class="chip">9 <strong>messages</strong></span><span class="chip">SLA <strong>15 minutes</strong></span></div></header>
+    <figure class="diagram-block" id="figure-07"><div class="diagram-top"><figcaption class="diagram-label">Fig. 07 &mdash; Just-in-time approval</figcaption><span class="diagram-hint">Scroll to inspect &rarr;</span></div><div class="diagram-container"><svg viewBox="0 0 1040 760" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="fig07-seq-jit-title fig07-seq-jit-desc" style="min-width:1040px"><title id="fig07-seq-jit-title">Just-in-time approval sequence</title><desc id="fig07-seq-jit-desc">Sequence diagram of an employee requesting just-in-time access, the Policy Engine returning approval-required, and an approver granting a thirty-minute session.</desc><defs>
+<marker id="fig07-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#52646c"/></marker>
+<marker id="fig07-arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#b54427"/></marker>
+<marker id="fig07-arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2c5d8a"/></marker>
+<marker id="fig07-arrow-open" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polyline points="0 0, 8 3, 0 6" fill="none" stroke="#52646c" stroke-width="1.2"/></marker>
+<marker id="fig07-arrow-open-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polyline points="0 0, 8 3, 0 6" fill="none" stroke="#2c5d8a" stroke-width="1.2"/></marker>
+<marker id="fig07-uml-open" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L9,4 L0,8" fill="none" stroke="#52646c" stroke-width="1"/></marker>
+<marker id="fig07-uml-triangle" markerWidth="16" markerHeight="12" refX="15" refY="6" orient="auto" markerUnits="userSpaceOnUse"><polygon points="0 0, 16 6, 0 12" fill="#f4f1e9" stroke="#1f2a30" stroke-width="1"/></marker>
+<marker id="fig07-uml-diamond-filled" markerWidth="18" markerHeight="10" refX="0" refY="5" orient="auto" markerUnits="userSpaceOnUse"><polygon points="0 5, 9 0, 18 5, 9 10" fill="#1f2a30"/></marker>
+<marker id="fig07-uml-diamond-hollow" markerWidth="18" markerHeight="10" refX="0" refY="5" orient="auto" markerUnits="userSpaceOnUse"><polygon points="0 5, 9 0, 18 5, 9 10" fill="#f4f1e9" stroke="#1f2a30" stroke-width="1"/></marker>
+<marker id="fig07-uml-diamond-hollow-end" markerWidth="18" markerHeight="10" refX="18" refY="5" orient="auto" markerUnits="userSpaceOnUse"><polygon points="0 5, 9 0, 18 5, 9 10" fill="#f4f1e9" stroke="#1f2a30" stroke-width="1"/></marker>
+
+</defs><rect width="100%" height="100%" fill="#f4f1e9"/><rect x="40" y="48" width="160" height="64" fill="#f4f1e9" stroke="none" stroke-width="1" rx="6"/><rect x="40" y="48" width="160" height="64" fill="rgba(82,100,108,0.10)" stroke="#5c6f77" stroke-width="1" rx="6"/><rect x="48" y="56" width="28" height="12" fill="none" stroke="rgba(31,42,48,0.30)" stroke-width="0.8" rx="2"/><text x="62" y="65" font-size="6.5" fill="#52646c" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.07">USER</text><text x="120" y="88" font-size="12" fill="#1f2a30" font-family="'Geist', system-ui, sans-serif" text-anchor="middle" font-weight="600">Employee</text><text x="120" y="103" font-size="8.5" fill="#52646c" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">access request</text><rect x="240" y="48" width="160" height="64" fill="#f4f1e9" stroke="none" stroke-width="1" rx="6"/><rect x="240" y="48" width="160" height="64" fill="#ffffff" stroke="#1f2a30" stroke-width="1" rx="6"/><rect x="248" y="56" width="34.18" height="12" fill="none" stroke="rgba(31,42,48,0.30)" stroke-width="0.8" rx="2"/><text x="265.09" y="65" font-size="6.5" fill="#1f2a30" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.07">PORTAL</text><text x="320" y="88" font-size="12" fill="#1f2a30" font-family="'Geist', system-ui, sans-serif" text-anchor="middle" font-weight="600">Login Portal</text><text x="320" y="103" font-size="8.5" fill="#52646c" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">JIT queue</text><rect x="440" y="48" width="160" height="64" fill="#f4f1e9" stroke="none" stroke-width="1" rx="6"/><rect x="440" y="48" width="160" height="64" fill="rgba(181,68,39,0.08)" stroke="#b54427" stroke-width="1.1" rx="6"/><rect x="448" y="56" width="34.18" height="12" fill="none" stroke="#b54427" stroke-width="0.8" rx="2"/><text x="465.09" y="65" font-size="6.5" fill="#b54427" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.07">POLICY</text><text x="520" y="88" font-size="12" fill="#1f2a30" font-family="'Geist', system-ui, sans-serif" text-anchor="middle" font-weight="600">Policy Engine</text><text x="520" y="103" font-size="8.5" fill="#52646c" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">approval policy</text><rect x="640" y="48" width="160" height="64" fill="#f4f1e9" stroke="none" stroke-width="1" rx="6"/><rect x="640" y="48" width="160" height="64" fill="rgba(82,100,108,0.10)" stroke="#5c6f77" stroke-width="1" rx="6"/><rect x="648" y="56" width="30.15" height="12" fill="none" stroke="rgba(31,42,48,0.30)" stroke-width="0.8" rx="2"/><text x="663.08" y="65" font-size="6.5" fill="#52646c" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.07">ADMIN</text><text x="720" y="88" font-size="12" fill="#1f2a30" font-family="'Geist', system-ui, sans-serif" text-anchor="middle" font-weight="600">Approver</text><text x="720" y="103" font-size="8.5" fill="#52646c" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">admin console</text><rect x="840" y="48" width="160" height="64" fill="#f4f1e9" stroke="none" stroke-width="1" rx="6"/><rect x="840" y="48" width="160" height="64" fill="rgba(31,42,48,0.05)" stroke="#52646c" stroke-width="1" rx="6"/><rect x="848" y="56" width="30.15" height="12" fill="none" stroke="rgba(31,42,48,0.30)" stroke-width="0.8" rx="2"/><text x="863.08" y="65" font-size="6.5" fill="#52646c" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.07">AUDIT</text><text x="920" y="88" font-size="12" fill="#1f2a30" font-family="'Geist', system-ui, sans-serif" text-anchor="middle" font-weight="600">Audit Chain</text><text x="920" y="103" font-size="8.5" fill="#52646c" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">append-only</text><line x1="120" y1="112" x2="120" y2="680" stroke="rgba(31,42,48,0.22)" stroke-width="1" stroke-dasharray="3,3"/><line x1="320" y1="112" x2="320" y2="680" stroke="rgba(31,42,48,0.22)" stroke-width="1" stroke-dasharray="3,3"/><line x1="520" y1="112" x2="520" y2="680" stroke="rgba(31,42,48,0.22)" stroke-width="1" stroke-dasharray="3,3"/><line x1="720" y1="112" x2="720" y2="680" stroke="rgba(31,42,48,0.22)" stroke-width="1" stroke-dasharray="3,3"/><line x1="920" y1="112" x2="920" y2="680" stroke="rgba(31,42,48,0.22)" stroke-width="1" stroke-dasharray="3,3"/><rect x="116" y="152" width="8" height="358" fill="rgba(31,42,48,0.06)" stroke="#52646c" stroke-width="0.8" rx="0"/><rect x="316" y="152" width="8" height="358" fill="rgba(31,42,48,0.06)" stroke="#52646c" stroke-width="0.8" rx="0"/><rect x="516" y="195" width="8" height="65" fill="rgba(31,42,48,0.06)" stroke="#52646c" stroke-width="0.8" rx="0"/><rect x="516" y="390" width="8" height="70" fill="rgba(31,42,48,0.06)" stroke="#52646c" stroke-width="0.8" rx="0"/><rect x="716" y="292" width="8" height="66" fill="rgba(31,42,48,0.06)" stroke="#52646c" stroke-width="0.8" rx="0"/><rect x="916" y="552" width="8" height="18" fill="rgba(31,42,48,0.06)" stroke="#52646c" stroke-width="0.8" rx="0"/><line x1="120" y1="160" x2="320" y2="160" stroke="#2c5d8a" stroke-width="1.2" marker-end="url(#fig07-arrow-link)"/><rect x="161.92" y="140" width="116.16" height="12" fill="#f4f1e9" stroke="none" stroke-width="1" rx="2"/><text x="220" y="149" font-size="8" fill="#2c5d8a" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.06">POST /ACCESS-REQUESTS</text><line x1="320" y1="205" x2="520" y2="205" stroke="#2c5d8a" stroke-width="1.2" marker-end="url(#fig07-arrow-link)"/><rect x="379.28" y="185" width="81.44" height="12" fill="#f4f1e9" stroke="none" stroke-width="1" rx="2"/><text x="420" y="194" font-size="8" fill="#2c5d8a" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.06">EVALUATE · JIT</text><line x1="520" y1="250" x2="320" y2="250" stroke="#52646c" stroke-width="1.2" stroke-dasharray="5,4" marker-end="url(#fig07-arrow)"/><rect x="359.44" y="230" width="121.12" height="12" fill="#f4f1e9" stroke="none" stroke-width="1" rx="2"/><text x="420" y="239" font-size="8" fill="#52646c" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.06">APPROVAL REQUIRED · 58</text><line x1="320" y1="300" x2="720" y2="300" stroke="#52646c" stroke-width="1.2" stroke-dasharray="5,4" marker-end="url(#fig07-arrow-open)"/><rect x="479.28" y="280" width="81.44" height="12" fill="#f4f1e9" stroke="none" stroke-width="1" rx="2"/><text x="520" y="289" font-size="8" fill="#52646c" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.06">NOTIFY · QUEUE</text><line x1="720" y1="350" x2="320" y2="350" stroke="#2c5d8a" stroke-width="1.2" marker-end="url(#fig07-arrow-link)"/><rect x="474.32" y="330" width="91.36" height="12" fill="#f4f1e9" stroke="none" stroke-width="1" rx="2"/><text x="520" y="339" font-size="8" fill="#2c5d8a" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.06">APPROVE · REASON</text><line x1="320" y1="400" x2="520" y2="400" stroke="#2c5d8a" stroke-width="1.2" marker-end="url(#fig07-arrow-link)"/><rect x="374.32" y="380" width="91.36" height="12" fill="#f4f1e9" stroke="none" stroke-width="1" rx="2"/><text x="420" y="389" font-size="8" fill="#2c5d8a" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.06">RESOLVE APPROVAL</text><line x1="520" y1="450" x2="320" y2="450" stroke="#b54427" stroke-width="1.4" marker-end="url(#fig07-arrow-accent)"/><rect x="381.76" y="430" width="76.48" height="12" fill="#f4f1e9" stroke="none" stroke-width="1" rx="2"/><text x="420" y="439" font-size="8" fill="#b54427" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.06">ALLOW · GRANT</text><line x1="320" y1="500" x2="120" y2="500" stroke="#52646c" stroke-width="1.2" stroke-dasharray="5,4" marker-end="url(#fig07-arrow)"/><rect x="164.4" y="480" width="111.2" height="12" fill="#f4f1e9" stroke="none" stroke-width="1" rx="2"/><text x="220" y="489" font-size="8" fill="#52646c" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.06">ACCESS GRANTED · 30M</text><line x1="520" y1="560" x2="920" y2="560" stroke="#52646c" stroke-width="1.2" stroke-dasharray="5,4" marker-end="url(#fig07-arrow-open)"/><rect x="679.28" y="540" width="81.44" height="12" fill="#f4f1e9" stroke="none" stroke-width="1" rx="2"/><text x="720" y="549" font-size="8" fill="#52646c" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.06">APPEND REQUEST</text><line x1="40" y1="714" x2="1000" y2="714" stroke="rgba(31,42,48,0.10)" stroke-width="0.8"/><text x="40" y="732" font-size="8" fill="#5c6f77" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="start" letter-spacing="0.16">LEGEND · KEY</text><line x1="152" y1="725" x2="176" y2="725" stroke="#2c5d8a" stroke-width="1.2" marker-end="url(#fig07-arrow-link)"/><text x="189" y="728" font-size="8.5" fill="#52646c" font-family="'Geist', system-ui, sans-serif" text-anchor="start">Call</text><line x1="237.4" y1="725" x2="261.4" y2="725" stroke="#52646c" stroke-width="1.2" stroke-dasharray="5,4" marker-end="url(#fig07-arrow)"/><text x="274.4" y="728" font-size="8.5" fill="#52646c" font-family="'Geist', system-ui, sans-serif" text-anchor="start">Return</text><line x1="333" y1="725" x2="357" y2="725" stroke="#52646c" stroke-width="1.2" stroke-dasharray="5,4" marker-end="url(#fig07-arrow-open)"/><text x="370" y="728" font-size="8.5" fill="#52646c" font-family="'Geist', system-ui, sans-serif" text-anchor="start">Async</text><rect x="423.5" y="719" width="14" height="11" fill="rgba(31,42,48,0.06)" stroke="#52646c" stroke-width="1" rx="2"/><text x="443.5" y="728" font-size="8.5" fill="#52646c" font-family="'Geist', system-ui, sans-serif" text-anchor="start">Activation</text><line x1="522.5" y1="725" x2="546.5" y2="725" stroke="#b54427" stroke-width="1.2" marker-end="url(#fig07-arrow-accent)"/><text x="559.5" y="728" font-size="8.5" fill="#52646c" font-family="'Geist', system-ui, sans-serif" text-anchor="start">Headline success</text></svg></div><p class="caption"><b>The approval band is a question, not a refusal.</b> The portal submits the request; the Policy Engine returns <code>APPROVAL_REQUIRED</code> with a score of 58; the queue notifies an approver within a 15-minute SLA; the approver grants a reason; the engine resolves the grant; the portal delivers a 30-minute single-use window. The audit append is asynchronous.</p></figure>
+
+    <div class="prose">
+      <h2>Why a human in the loop</h2>
+      <p>The approval band exists because some context is genuinely ambiguous. A contractor asking for a production wiki at 21:30 from a new ASN is not obviously an attacker, and it is not obviously safe. A score in the 50s is the system saying &ldquo;I have reasons to hesitate.&rdquo; A human with the context can resolve the ambiguity faster and more accurately than a threshold can.</p>
+      <p>The important design choice is that the human does not get a blank check. The approval is bounded by the requested TTL, capped by policy, single-use, and re-checked at resolution. The approver grants a task window, not a role. The engine still owns the decision; the human supplies one missing input.</p>
+
+      <div class="table-wrap"><table class="step-table"><caption>Table 1 &mdash; The nine messages in the figure.</caption><thead><tr><th>#</th><th>From &rarr; to</th><th>Message</th><th>What happens</th></tr></thead><tbody><tr><td>01</td><td>Employee &rarr; Portal</td><td>POST /v1/jit/requests</td><td>The requester supplies the resource, action, justification, and requested TTL.</td></tr><tr><td>02</td><td>Portal &rarr; Policy</td><td>Evaluate JIT</td><td>The engine scores the request and applies the approval policy.</td></tr><tr><td>03</td><td>Policy &rarr; Portal</td><td>Approval required &middot; 58</td><td>The decision includes the band, top reasons, and a 15-minute SLA.</td></tr><tr><td>04</td><td>Portal &rarr; Approver</td><td>Notify queue</td><td>The approver sees the request, the score, the reasons, and the device posture.</td></tr><tr><td>05</td><td>Approver &rarr; Portal</td><td>Approve &middot; reason</td><td>The approver records a reason and a grant TTL, capped by policy at 30 minutes.</td></tr><tr><td>06</td><td>Portal &rarr; Policy</td><td>Resolve approval</td><td>The engine checks that the request is still pending within the 15-minute SLA, the approver is eligible, and policy still allows.</td></tr><tr><td>07</td><td>Policy &rarr; Portal</td><td>Allow + grant</td><td>The grant is single-use and expires at the earlier of the TTL and the policy ceiling.</td></tr><tr><td>08</td><td>Portal &rarr; Employee</td><td>Access granted &middot; 30m</td><td>The requester gets a session or a certificate, not a permanent entitlement.</td></tr><tr><td>09</td><td>Portal &rarr; Audit</td><td>Append request</td><td>The full lifecycle is appended: request, decision, approval, grant, consumption.</td></tr></tbody></table></div>
+
+      <h2>The rules behind the queue</h2>
+      <p>Every rule in the table below is enforced server-side. The UI mirrors them, but the UI is not the control. A request that expires while the approver is reading it cannot be approved. A request whose policy changed during the wait is re-evaluated. A grant that was already consumed cannot be replayed.</p>
+
+      <div class="table-wrap"><table class="compact"><caption>Table 2 &mdash; The JIT rules that are enforced outside the UI.</caption><thead><tr><th>Rule</th><th>Enforcement</th><th>Why</th></tr></thead><tbody><tr><td>Requester cannot approve their own request</td><td>Policy Engine + API guard</td><td>Four-eyes control; self-approval is a conflict of interest.</td></tr><tr><td>Approval SLA is 15 minutes</td><td>Queue expiry</td><td>The request cannot sit forever waiting for a human.</td></tr><tr><td>Grant is at most 30 minutes</td><td>TTL clamp</td><td>The approval is for a task, not a standing role.</td></tr><tr><td>Grant is single-use</td><td>Consumption guard</td><td>A consumed grant cannot open a second session.</td></tr><tr><td>Expired request cannot be approved</td><td>State guard</td><td>The approver's action must be meaningful.</td></tr><tr><td>Policy is re-checked at approval</td><td>Resolve step</td><td>A policy published during the wait still applies.</td></tr><tr><td>Every transition is audited</td><td>Audit obligation</td><td>The queue is evidence, not just workflow.</td></tr></tbody></table></div>
+
+      <div class="table-wrap"><table class="compact"><caption>Table 3 &mdash; The happy path and the exits. The full machine is on the JIT state page.</caption><thead><tr><th>From</th><th>Event</th><th>Guard</th><th>To</th></tr></thead><tbody><tr><td>&mdash;</td><td>Create</td><td>Requester is authenticated</td><td><code>REQUESTED</code></td></tr><tr><td><code>REQUESTED</code></td><td>Submit</td><td>Resource exists; score in approval band</td><td><code>PENDING</code></td></tr><tr><td><code>PENDING</code></td><td>Approve</td><td>Approver is not requester; not expired</td><td><code>APPROVED</code></td></tr><tr><td><code>PENDING</code></td><td>Deny</td><td>Reason supplied</td><td><code>DENIED</code></td></tr><tr><td><code>PENDING</code></td><td>SLA elapsed</td><td>15-minute timer</td><td><code>EXPIRED</code></td></tr><tr><td><code>APPROVED</code></td><td>Open session</td><td>Grant unused; not expired</td><td><code>CONSUMED</code></td></tr><tr><td><code>APPROVED</code></td><td>Grant expires</td><td>30-minute ceiling</td><td><code>EXPIRED</code></td></tr></tbody></table></div>
+
+      <div class="cards two">
+        <div class="card">
+          <div class="card-label">What the approver sees</div>
+          <h3>Enough context to say yes or no</h3>
+          <ul class="rule-list">
+            <li>Requester, team, and role.</li>
+            <li>Resource, sensitivity, and requested action.</li>
+            <li>Trust score, band, and the top three reason codes.</li>
+            <li>Device posture and the last posture change.</li>
+            <li>Requested TTL and the policy ceiling.</li>
+            <li>Prior access to the same resource, if any.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <div class="card-label">What the approver does not get</div>
+          <h3>No silent expansion</h3>
+          <ul class="rule-list">
+            <li>No ability to approve their own request.</li>
+            <li>No ability to exceed the policy TTL ceiling.</li>
+            <li>No ability to grant a different resource.</li>
+            <li>No ability to reuse a consumed grant.</li>
+            <li>No ability to suppress the audit event.</li>
+          </ul>
+        </div>
+      </div>
+
+      <h2>Failure and edge cases</h2>
+      <ul>
+        <li><strong>Two approvers race:</strong> the first decision wins; the second receives <code>409 CONFLICT</code> and the current state.</li>
+        <li><strong>Approver is the requester:</strong> the API rejects with <code>403 SELF_APPROVAL</code>, even if the UI is bypassed.</li>
+        <li><strong>Request expires during approval:</strong> the resolution step fails closed and the request moves to <code>EXPIRED</code>.</li>
+        <li><strong>Policy changes during the wait:</strong> the engine re-evaluates at resolution; a new deny wins.</li>
+        <li><strong>Grant is never consumed:</strong> it expires after 30 minutes; a sweeper records the expiry.</li>
+        <li><strong>Audit append fails:</strong> the grant is not issued; the request remains pending with an error state.</li>
+      </ul>
+
+      <div class="callout"><span class="k">Priority note</span><p>JIT is an add-on in the project scope. The core system must work without it: an approval-band request can be denied by policy when the queue is not deployed. The design keeps the state machine and API ready so the add-on does not change the decision contract.</p></div>
+
+      <div class="link-row"><a href="state-jit.html">JIT state machine &rarr;</a><a href="api.html#tag-jit">JIT API &rarr;</a><a href="requirements.html">Requirements &rarr;</a><a href="risk-scoring.html">Risk report &rarr;</a></div>
+    </div>
+  </div>
+  <nav class="page-nav" aria-label="Previous and next pages"><a href="flow-ssh-certificate.html"><span class="dir">Previous</span><span class="name">SSH certificate</span></a><a class="next" href="flow-session-kill.html"><span class="dir">Next</span><span class="name">Session kill</span></a></nav>
+</div>
+
+</main>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div>ZeroGate design dossier &middot; v0.9 &middot; October 2026<br>
+      NIST SP 800-207 access broker &middot; single-tenant lab scope</div>
+    <div>Diagram system adapted from <a href="https://github.com/cathrynlavery/diagram-design">cathrynlavery/diagram-design</a> (MIT).<br>
+      <a href="../README.md">README</a> &middot; <a href="openapi.yaml">openapi.yaml</a> &middot;
+      <a href="risk-scoring-report.md">risk report</a> &middot;
+      <a href="functional-requirements.md">requirements</a></div>
+  </div>
+</footer>
+</body>
+</html>

@@ -1,0 +1,13 @@
+components 1320 760
+domain 1320 760
+er 1000 760
+identity 1320 760
+access 1320 760
+seq-passkey 1080 800
+seq-ssh 1080 800
+seq-jit 1080 800
+seq-kill 1080 800
+policy 1000 900
+state-session 1040 660
+state-jit 1140 660
+state-device 1140 660
