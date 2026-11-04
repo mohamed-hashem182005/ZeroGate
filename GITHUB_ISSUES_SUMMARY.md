@@ -176,6 +176,4 @@ For your graduation defense:
 
 ---
 
-**Generated:** November 4, 2026  
-**Tool:** Claude Code  
 **Project:** ZeroGate — Zero Trust Access Broker
