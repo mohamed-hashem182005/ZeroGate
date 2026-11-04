@@ -17,6 +17,48 @@
 
 ---
 
+## 🌐 كيفية تصفح وثائق وتصميمات المشروع كصفحات ويب مصممة (بدون رؤية أي كود)
+
+ملفات التوثيق في مجلد `docs/` هي صفحات ويب متكاملة مصممة بأعلى جودة مع خطوط ورسومات تفاعلية، وليست مجرد نصوص. لتصفحها كـ **موقع ويب حقيقي دون رؤية كود الـ HTML نهائياً**:
+
+### 1️⃣ التصفح المحلي بنقرة واحدة (على جهازك)
+- **على Windows:** انقر مرتين مباشرة على ملف [`open_docs.bat`](open_docs.bat) في المجلد الرئيسي، أو انقر مرتين على [`docs/index.html`](docs/index.html).
+- سيفتح الموقع فوراً في متصفحك الافتراضي بتصميمه الكامل ودون الحاجة لأي خادم أو اتصال بالإنترنت.
+
+---
+
+### 2️⃣ التصفح أونلاين عبر المتصفح مباشرة (روابط عرض تفاعلية)
+يمكنك وأعضاء الفريق فتح الروابط التالية مباشرة لمعاينة الصفحات كـ موقع ويب حي:
+
+| الصفحة التوثيقية | رابط العرض المباشر كصفحة ويب | الوصف |
+|---|---|---|
+| 🏠 **الرئيسية (Index)** | [🔗 فتح صفحة البداية](https://htmlpreview.github.io/?https://github.com/mohamed-hashem182005/ZeroGate/blob/main/docs/index.html) | نظرة عامة وفهرس التنقل السريع |
+| 🏛️ **المعمارية (Architecture)** | [🔗 فتح صفحة المعمارية](https://htmlpreview.github.io/?https://github.com/mohamed-hashem182005/ZeroGate/blob/main/docs/architecture.html) | معمارية المناطق الخمس للوسيط |
+| 📋 **المتطلبات (Requirements)** | [🔗 فتح صفحة المتطلبات](https://htmlpreview.github.io/?https://github.com/mohamed-hashem182005/ZeroGate/blob/main/docs/requirements.html) | مصفوفة المتطلبات الوظيفية كاملة |
+| ⚖️ **محرك السياسات (Policy Engine)** | [🔗 فتح محرك السياسات](https://htmlpreview.github.io/?https://github.com/mohamed-hashem182005/ZeroGate/blob/main/docs/policy-engine.html) | خطوات وتدفق اتخاذ القرار |
+| 📊 **نموذج المخاطر (Risk Scoring)** | [🔗 فتح نموذج المخاطر](https://htmlpreview.github.io/?https://github.com/mohamed-hashem182005/ZeroGate/blob/main/docs/risk-scoring.html) | الإشارات الخمس ونموذج الذكاء الاصطناعي |
+| 🗄️ **قاعدة البيانات (Database)** | [🔗 فتح مخطط قاعدة البيانات](https://htmlpreview.github.io/?https://github.com/mohamed-hashem182005/ZeroGate/blob/main/docs/database-schema.html) | تفاصيل الجداول والشرائح |
+| 🔑 **تسجيل الدخول (Passkey Flow)** | [🔗 فتح تدفق Passkey](https://htmlpreview.github.io/?https://github.com/mohamed-hashem182005/ZeroGate/blob/main/docs/flow-passkey.html) | رسم وتسلسل WebAuthn |
+| 🛡️ **شهادات SSH (SSH CA Flow)** | [🔗 فتح تدفق شهادات SSH](https://htmlpreview.github.io/?https://github.com/mohamed-hashem182005/ZeroGate/blob/main/docs/flow-ssh-certificate.html) | آلية منح الشهادات قصيرة الأجل |
+| ⏱️ **الوصول الفوري (JIT Flow)** | [🔗 فتح تدفق JIT](https://htmlpreview.github.io/?https://github.com/mohamed-hashem182005/ZeroGate/blob/main/docs/flow-jit-approval.html) | دورة حياة طلبات الصلاحيات المؤقتة |
+| ⚡ **قطع الجلسات (Session Kill Flow)** | [🔗 فتح تدفق قطع الجلسات](https://htmlpreview.github.io/?https://github.com/mohamed-hashem182005/ZeroGate/blob/main/docs/flow-session-kill.html) | إنهاء الجلسة اللحظي على البروكسي |
+| 🔌 **واجهات البرمجة (API Reference)** | [🔗 فتح مواصفة الـ API](https://htmlpreview.github.io/?https://github.com/mohamed-hashem182005/ZeroGate/blob/main/docs/api.html) | وثائق OpenAPI التفاعلية |
+
+---
+
+### 3️⃣ تحويل المستودع إلى موقع ويب رسمي حي (GitHub Pages) ⭐ موصى به جداً
+لجعل الموقع متاحاً برابط رسمي دائم ومباشر:
+1. اذهب إلى إعدادات المستودع على GitHub: **Settings**
+2. من القائمة الجانبية اختر **Pages**
+3. تحت قسم **Build and deployment**:
+   - اختر **Source**: `Deploy from a branch`
+   - اختر **Branch**: `main` والمجلد `/docs`
+   - اضغط **Save**
+4. خلال دقيقة واحدة سيصبح التوثيق متاحاً كـ موقع ويب حقيقي عبر الرابط:
+   `https://mohamed-hashem182005.github.io/ZeroGate/`
+
+---
+
 ## 🎯 فكرة المشروع ومحاوره الأساسية
 
 يقوم نظام ZeroGate بالتحقق الصارم من كل طلب وصول بناءً على:
